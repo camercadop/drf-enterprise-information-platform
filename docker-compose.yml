@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  # Enterprise-grade relational database for persistent data storage
+  postgres:
+    image: postgres:16-alpine
+    container_name: eip-postgres
+    environment:
+      # Database configuration
+      POSTGRES_DB: eip_dev
+      POSTGRES_USER: eip_user
+      POSTGRES_PASSWORD: eip_password
+    volumes:
+      # Persistent storage for PostgreSQL data
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - eip_network
+
+  # Redis Cache Service
+  # In-memory data structure store for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: eip-redis
+    command: redis-server --requirepass redis_password
+    volumes:
+      # Persistent storage for Redis data
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - eip_network
+
+  # Django Application Service
+  # Main Python application built using the Dockerfile in the root directory
+  app:
+    build: .
+    container_name: eip-app
+    environment:
+      # Database connection string for Django
+      DATABASE_URL: postgresql://eip_user:eip_password@postgres:5432/eip_dev
+      # Redis connection URL for caching and task queues
+      REDIS_URL: redis://redis:6379/0
+      # Django settings module to use
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      # Security settings
+      SECRET_KEY: django-insecure-dev-key-change-in-production
+      # Allowed hosts for the application
+      ALLOWED_HOSTS: localhost,127.0.0.1
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - eip_network
+    # Mount application code and configuration into the container
+    volumes:
+      - ./apps:/app/apps
+      - ./config:/app/config
+      - ./static:/app/static
+      - ./media:/app/media
+
+volumes:
+  # Persistent volumes for database data
+  postgres_data:
+  redis_data:
+
+# Docker network for service communication
+# Isolated network for EIP services with custom subnet
+networks:
+  eip_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

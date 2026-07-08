@@ -1,0 +1,29 @@
+# === Version Control Files ===
+.git
+.gitignore
+
+# === Python Cache and Compiled Files ===
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# === Virtual Environments ===
+env
+venv
+.venv
+
+# === Node.js Dependencies ===
+node_modules
+
+# === Build Artifacts and Distribution ===
+dist
+build
+*.egg-info
+
+# === Docker Specific Files ===
+.dockerignore
+docker-compose.yml
+docker/apps/Dockerfile
+docker/config/init-db.sql
