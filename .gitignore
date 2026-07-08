@@ -57,6 +57,7 @@ htmlcov/
 
 # Documentation
 docs/_build/
+docs/_*.md
 
 # Static files (mounted in Docker)
 static/
@@ -212,3 +213,5 @@ session*
 
 # Backup files
 *~
+
+.amazonq/*
