@@ -6,6 +6,7 @@ This document describes the platform's data model organized by domain. Each sect
 
 ```mermaid
 erDiagram
+    Tenant ||--o{ TenantSetting : "configured by"
     Tenant ||--o{ TenantMembership : "has"
     User ||--o{ TenantMembership : "belongs via"
     User ||--o{ UserPasswordHistory : "tracks"
@@ -48,16 +49,33 @@ erDiagram
         VARCHAR name
         VARCHAR code UK
         BOOLEAN is_active
-        JSON config
+        JSON details
         DATETIME created_at
         DATETIME updated_at
     }
+
+    TenantSetting {
+        UUID id PK
+        UUID tenant_id FK
+        VARCHAR key
+        TEXT value
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    Tenant ||--o{ TenantSetting : "has many"
 ```
 
-| Field | Purpose |
-|-------|---------|
-| code | Unique internal identifier for programmatic reference |
-| config | Flexible key-value store for tenant-specific settings (password policies, feature flags, etc.) |
+**Constraints:**
+
+| Model | Constraint | Fields |
+|-------|-----------|--------|
+| TenantSetting | unique_setting_per_tenant | (tenant, key) |
+
+**Design decisions:**
+- `details` stores general tenant metadata (description, industry, contact info) — not behavioral configuration.
+- `TenantSetting` stores configurable behavior as queryable key-value rows (password policies, feature flags, rate limits).
+- Unique constraint on (tenant, key) ensures no duplicate settings per tenant.
 
 ---
 

@@ -67,6 +67,11 @@ Centralized exception hierarchy extending DRF's `APIException`:
 - `PermissionDeniedError` (403)
 - `NotFoundError` (404)
 - `ThrottlingError` (429)
+- `exception_handler` — custom handler that wraps errors in `{status, code, data}`
+
+### renderers/
+
+- `APIRenderer` — wraps successful responses in `{status: "OK", data: ...}`
 
 ### filters/
 
@@ -92,4 +97,5 @@ Centralized exception hierarchy extending DRF's `APIException`:
 - `formatting` — datetime formatting helpers
 - `request` — client IP extraction, request data parsing
 - `security` — password complexity validation, API key generation, data masking
+- `tenant` — extract tenant from JWT, query tenant settings
 - `validators` — reusable field validators (username, phone, email domain, uniqueness, file size, date range, JSON schema)

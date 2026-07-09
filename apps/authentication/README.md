@@ -1,6 +1,6 @@
 # Authentication
 
-JWT-based authentication with token blacklisting, password management, and session control.
+JWT-based authentication with token blacklisting, tenant context, password management, and session control.
 
 ## Endpoints
 
@@ -12,6 +12,33 @@ JWT-based authentication with token blacklisting, password management, and sessi
 | POST | `/api/auth/logout-all/` | Yes | Blacklists all outstanding refresh tokens for the user |
 | POST | `/api/auth/password/change/` | Yes | Changes password and returns a new access token |
 
+## Login
+
+Request body:
+- `email` (required)
+- `password` (required)
+- `tenant_id` (required if user belongs to multiple tenants)
+
+Behavior:
+- Single tenant membership → auto-resolved
+- Multiple memberships without `tenant_id` → error with code `tenant_required` and `available_tenants` list
+- Invalid `tenant_id` → error with code `invalid_tenant`
+- No active memberships → error with code `no_tenant_membership`
+
+The resolved `tenant_id` is stored in the JWT claims for downstream use.
+
+## Response Format
+
+All responses follow the platform envelope:
+
+```json
+// Success
+{"status": "OK", "data": {"access": "...", "refresh": "...", "user": {...}}}
+
+// Error
+{"status": "ERROR", "code": "tenant_required", "data": {"tenant_id": "...", "available_tenants": [...]}}
+```
+
 ## Token Lifecycle
 
 ```mermaid
@@ -20,12 +47,12 @@ sequenceDiagram
     participant API
     participant Blacklist
 
-    Client->>API: POST /login/ (email, password)
-    API-->>Client: access + refresh tokens
+    Client->>API: POST /login/ (email, password, tenant_id?)
+    API-->>Client: {status: OK, data: {access, refresh, user}}
 
     Client->>API: POST /refresh/ (refresh)
     API->>Blacklist: blacklist old refresh
-    API-->>Client: new access + new refresh
+    API-->>Client: {status: OK, data: {access, refresh}}
 
     Client->>API: POST /logout/ (refresh)
     API->>Blacklist: blacklist refresh
@@ -41,7 +68,7 @@ sequenceDiagram
 
 Validations applied:
 1. Old password must be correct
-2. New password must pass complexity rules (min length, uppercase, lowercase, digit, special character)
+2. New password must pass complexity rules (configurable per tenant via `password_policy` setting)
 3. New password must not match any of the last 5 passwords (`PASSWORD_HISTORY_LIMIT`)
 4. Confirmation must match
 

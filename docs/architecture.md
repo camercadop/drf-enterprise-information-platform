@@ -30,7 +30,8 @@ Provides base classes that all domain modules inherit from. This layer defines:
 - **Base models** — `TimeStampedModel`, `SoftDeletableModel`, `BaseModel`
 - **Base serializers** — `BaseSerializer` with plugin system and template method lifecycle
 - **Base views** — `BaseViewSet` with filtering, ordering, permissions
-- **Exceptions** — Centralized exception hierarchy
+- **Exceptions** — Centralized exception hierarchy + custom handler
+- **Renderers** — Standard response envelope
 - **Permissions** — Tenant-aware permission classes
 - **Pagination** — Configurable pagination strategies
 - **Filters** — Base filter classes with common fields
@@ -73,9 +74,26 @@ Strategy: JWT with token blacklisting via `djangorestframework-simplejwt`.
 
 - Access tokens are short-lived (30 min), refresh tokens last 7 days
 - Refresh tokens rotate on use — the old one is blacklisted automatically
+- Login resolves tenant context — `tenant_id` is stored in JWT claims
 - Logout blacklists the refresh token server-side
-- Password changes enforce complexity rules and prevent reuse of the last 5 passwords
+- Password changes enforce complexity rules (tenant-configurable) and prevent reuse of the last 5 passwords
 - "Logout all" invalidates every outstanding refresh token for the user
+
+## API Response Envelope
+
+All responses follow a consistent structure:
+
+```json
+// Success
+{"status": "OK", "data": { ... }}
+
+// Error
+{"status": "ERROR", "code": "<error_code>", "data": { ... }}
+```
+
+Implemented via:
+- `core.renderers.APIRenderer` — wraps successful responses
+- `core.exceptions.handler.exception_handler` — wraps error responses with extracted error code
 
 ## Tech Stack
 
