@@ -67,6 +67,16 @@ Two complementary patterns for extending behavior:
 
 See `docs/guidelines/extensible-lifecycle-design.md` for details.
 
+## Authentication
+
+Strategy: JWT with token blacklisting via `djangorestframework-simplejwt`.
+
+- Access tokens are short-lived (30 min), refresh tokens last 7 days
+- Refresh tokens rotate on use — the old one is blacklisted automatically
+- Logout blacklists the refresh token server-side
+- Password changes enforce complexity rules and prevent reuse of the last 5 passwords
+- "Logout all" invalidates every outstanding refresh token for the user
+
 ## Tech Stack
 
 | Layer | Technology |
