@@ -77,8 +77,11 @@ uv run pre-commit run --all-files
 
 ### Models
 
-- All models inherit from `BaseModel` (includes timestamps + soft-delete)
-- Use `TimeStampedModel` if soft-delete is not needed
+- All tenant-scoped models inherit from `BaseModel` (includes timestamps + soft-delete + tenant FK)
+- Use `CoreModel` for platform-level models that don't belong to a tenant
+- All models use UUID as primary key (`primary_key=True`)
+- Do not set `default_auto_field` in app configs
+- Add a comment under each field explaining its purpose
 - Soft-delete fields: `deleted_at`, `deleted_by`
 - Timestamp fields: `created_at`, `updated_at`
 
