@@ -19,7 +19,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "apps.tenants",
+    "apps.users",
 ]
+
+AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -51,27 +54,33 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": env.db("DATABASE_URL", default=f"postgresql://{env('POSTGRES_USER')}:{env('POSTGRES_PASSWORD')}@localhost:5432/{env('POSTGRES_DB')}"),
+    "default": env.db(
+        "DATABASE_URL",
+        default=f"postgresql://{env('POSTGRES_USER')}:{env('POSTGRES_PASSWORD')}@localhost:5432/{env('POSTGRES_DB')}",
+    ),
 }
 
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env("REDIS_URL", default=f"redis://:{env('REDIS_PASSWORD')}@localhost:6379/0"),
+        "LOCATION": env(
+            "REDIS_URL", default=f"redis://:{env('REDIS_PASSWORD')}@localhost:6379/0"
+        ),
     }
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "es"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
