@@ -50,5 +50,8 @@ jobs:
       - name: Type check
         run: uv run mypy .
 
+      - name: Migrate
+        run: uv run python manage.py migrate
+
       - name: Test
         run: uv run pytest

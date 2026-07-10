@@ -43,6 +43,7 @@ filterwarnings = [
 [tool.ruff]
 target-version = "py314"
 line-length = 88
+exclude = ["*/migrations/*"]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -71,4 +72,5 @@ exclude = [
     ".venv/",
     ".git/",
     "tests/",
+    "migrations/",
 ]
