@@ -1,6 +1,8 @@
 # Utils
 
-Shared utility functions used across the platform. Organized by domain: datetime formatting, HTTP request helpers, security primitives, and reusable validators.
+Shared utility functions used across the platform. Organized by domain: datetime formatting, HTTP request helpers, and security primitives.
+
+For validators, see [core/validators/](../validators/README.md).
 
 ## API
 
@@ -80,88 +82,3 @@ mask_sensitive_data("1234567890")        # "1234**7890"
 mask_sensitive_data("secret", 2, "#")    # "se##et"
 ```
 
-### validators.py
-
-Reusable validation logic — both deconstructible classes (for model fields) and standalone functions (uniqueness checks, file size, date ranges, JSON parsing).
-
-#### Validator classes
-
-- `UsernameValidator` — alphanumeric + underscores, 3–30 chars (deconstructible, usable on model fields)
-- `PhoneNumberValidator` — 10–15 digits after stripping formatting
-- `EmailDomainValidator(allowed_domains)` — restrict email to a whitelist of domains
-
-```python
-from core.utils.validators import (
-    UsernameValidator,
-    PhoneNumberValidator,
-    EmailDomainValidator,
-)
-
-# UsernameValidator — use on model fields or call directly
-validate_username = UsernameValidator()
-validate_username("john_doe")    # OK
-validate_username("ab")          # raises ValidationError (too short)
-validate_username("no spaces!")  # raises ValidationError (invalid chars)
-
-# PhoneNumberValidator
-validate_phone = PhoneNumberValidator()
-validate_phone("+1 (555) 123-4567")  # OK (stripped to 15551234567)
-validate_phone("123")                # raises ValidationError (too few digits)
-
-# EmailDomainValidator
-validate_domain = EmailDomainValidator(["company.com", "corp.io"])
-validate_domain("user@company.com")  # OK
-validate_domain("user@gmail.com")    # raises ValidationError
-```
-
-#### Utility functions
-
-- `validate_email_uniqueness(email, model_class, exclude_id=None)` — case-insensitive uniqueness check
-- `validate_unique_slug(value, model_class, field_name="slug", exclude_id=None)` — slug uniqueness check
-- `validate_file_size(file, max_size_mb=10)` — file size limit check
-- `validate_date_range(start_date, end_date, max_days=365)` — date range validation; returns `{is_valid, errors}`
-- `validate_json_field(value, schema=None)` — JSON parsing + optional JSON Schema validation; returns `{is_valid, errors, data}`
-
-```python
-from core.utils.validators import (
-    validate_email_uniqueness,
-    validate_unique_slug,
-    validate_file_size,
-    validate_date_range,
-    validate_json_field,
-)
-from apps.users.models import User
-from datetime import date
-
-# Email uniqueness (case-insensitive)
-is_unique = validate_email_uniqueness("Admin@Company.com", User)
-# Exclude current user during update
-is_unique = validate_email_uniqueness("admin@company.com", User, exclude_id=user.id)
-
-# Slug uniqueness
-validate_unique_slug("my-article", Article)                    # returns "my-article"
-validate_unique_slug("my-article", Article, exclude_id=obj.id)  # skip self
-
-# File size
-validate_file_size(uploaded_file)              # True if <= 10 MB
-validate_file_size(uploaded_file, max_size_mb=5)  # True if <= 5 MB
-
-# Date range
-result = validate_date_range(date(2025, 1, 1), date(2025, 3, 1))
-# {"is_valid": True, "errors": []}
-
-result = validate_date_range(date(2025, 6, 1), date(2025, 1, 1))
-# {"is_valid": False, "errors": ["Start date cannot be after end date."]}
-
-# JSON field validation
-result = validate_json_field('{"name": "test"}')
-# {"is_valid": True, "errors": [], "data": {"name": "test"}}
-
-result = validate_json_field('not json')
-# {"is_valid": False, "errors": ["Invalid JSON: ..."], "data": None}
-
-# With JSON Schema
-schema = {"type": "object", "required": ["name"]}
-result = validate_json_field('{"age": 30}', schema=schema)
-# {"is_valid": False, "errors": ["Schema validation error: 'name' is a required property"], "data": {"age": 30}}
-```

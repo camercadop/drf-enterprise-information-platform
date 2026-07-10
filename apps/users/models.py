@@ -59,6 +59,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS: list[str] = []
 
     class Meta:
+        db_table = "users"
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
@@ -76,6 +77,7 @@ class UserProfile(models.Model):
     # Flexible key-value store for personal details (phone, avatar, bio, etc.)
 
     class Meta:
+        db_table = "users_profiles"
         ordering = ["-user__created_at"]
 
     def __str__(self) -> str:
@@ -101,6 +103,7 @@ class TenantRole(models.Model):
     # Timestamp when the role was created
 
     class Meta:
+        db_table = "users_roles"
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(
@@ -139,6 +142,7 @@ class TenantMembership(models.Model):
     # Timestamp when the user joined the tenant
 
     class Meta:
+        db_table = "users_memberships"
         ordering = ["-joined_at"]
         constraints = [
             models.UniqueConstraint(

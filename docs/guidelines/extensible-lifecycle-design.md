@@ -123,6 +123,21 @@ class InvitationSerializer(BaseSerializer):
 
 ---
 
+## View-Level Declarative Permissions
+
+`BaseViewSet` supports a `write_permission_classes` attribute that eliminates the need to override `get_permissions` for the common pattern of "elevated permissions on write actions, authenticated-only on reads."
+
+```python
+class TenantViewSet(BaseViewSet):
+    write_permission_classes = [IsSuperUser]
+```
+
+When `write_permission_classes` is set, write actions (`create`, `update`, `partial_update`, `destroy`) require `IsAuthenticated` plus the listed permissions. Read actions fall back to `permission_classes` (default: `IsAuthenticated`).
+
+For non-standard permission logic (e.g., per-action granularity beyond read/write), override `get_permissions` as usual.
+
+---
+
 ## When to Use Each
 
 | Scenario | Use |
@@ -132,3 +147,4 @@ class InvitationSerializer(BaseSerializer):
 | Blocking an operation based on a condition | Plugin (raise exception) |
 | Customizing how an object is saved | Template method (`do_create`) |
 | Transforming API response shape | Plugin (`on_representation`) |
+| Elevated permissions on write actions | `write_permission_classes` attribute |

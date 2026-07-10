@@ -8,7 +8,7 @@ from django.db.models import Model, QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, viewsets
 from rest_framework.filters import BaseFilterBackend
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 
 
@@ -46,6 +46,7 @@ class BaseViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "updated_at"]
     ordering = ["-created_at"]
     permission_classes = [IsAuthenticated]
+    write_permission_classes: list[type[BasePermission]] | None = None
 
     serializer_classes: dict[str, type[serializers.Serializer]] = {}
     querysets: dict[str, QuerySet[Any]] = {}
@@ -56,6 +57,13 @@ class BaseViewSet(viewsets.ModelViewSet):
     def get_write_actions(cls) -> list[str]:
         """Return actions that perform write operations."""
         return ["create", "update", "partial_update", "destroy"]
+
+    # --- Permissions ---
+
+    def get_permissions(self) -> list[BasePermission]:
+        if self.write_permission_classes and self.action in self.get_write_actions():
+            return [p() for p in [IsAuthenticated, *self.write_permission_classes]]
+        return [p() for p in self.permission_classes]
 
     # --- Dispatch by action ---
 

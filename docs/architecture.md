@@ -29,7 +29,7 @@ Provides base classes that all domain modules inherit from. This layer defines:
 
 - **Base models** — `TimeStampedModel`, `SoftDeletableModel`, `BaseModel`
 - **Base serializers** — `BaseSerializer` with plugin system and template method lifecycle
-- **Base views** — `BaseViewSet` with filtering, ordering, permissions
+- **Base views** — `BaseViewSet` with filtering, ordering, declarative permissions
 - **Exceptions** — Centralized exception hierarchy + custom handler
 - **Renderers** — Standard response envelope
 - **Permissions** — Tenant-aware permission classes
