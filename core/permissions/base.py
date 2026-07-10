@@ -102,6 +102,15 @@ class IsTeamMember(BasePermission):
         return self.has_permission(request, view)
 
 
+class IsSuperUser(BasePermission):
+    """Allow access only to superusers."""
+
+    message = "Only platform administrators can perform this action."
+
+    def has_permission(self, request: Request, view: Any) -> bool:
+        return bool(request.user and request.user.is_superuser)
+
+
 class IsTenantAdmin(BasePermission):
     """
     Permission that allows access only to tenant admins.

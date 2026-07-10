@@ -50,10 +50,20 @@ class BaseViewSet(viewsets.ModelViewSet):
     serializer_classes: dict[str, type[serializers.Serializer]] = {}
     querysets: dict[str, QuerySet[Any]] = {}
 
+    # --- Action classification ---
+
+    @classmethod
+    def get_write_actions(cls) -> list[str]:
+        """Return actions that perform write operations."""
+        return ["create", "update", "partial_update", "destroy"]
+
     # --- Dispatch by action ---
 
     def get_serializer_class(self) -> type[serializers.Serializer]:
-        return self.serializer_classes.get(self.action, super().get_serializer_class())
+        cls: type[serializers.Serializer] = self.serializer_classes.get(
+            self.action, super().get_serializer_class()
+        )
+        return cls
 
     def get_queryset(self) -> QuerySet[Any]:
         return self.querysets.get(self.action, super().get_queryset())

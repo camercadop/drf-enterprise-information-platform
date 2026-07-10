@@ -125,7 +125,7 @@ class PasswordChangeSerializer(serializers.Serializer):  # type: ignore[type-arg
         # Load password policy from tenant settings (stored as JSON text)
         import json
 
-        from core.utils.tenant import get_tenant_id, get_tenant_setting
+        from apps.tenants.utils import get_tenant_id, get_tenant_setting
 
         config: dict[str, Any] | None = None
         tenant_id = get_tenant_id(self.context["request"])

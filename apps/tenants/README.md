@@ -24,7 +24,7 @@ Key-value store for configurable tenant behavior.
 |-------|------|-------------|
 | id | UUID | Primary key |
 | tenant_id | FK → Tenant | Owning tenant |
-| key | VARCHAR | Setting identifier (e.g., `password_min_length`) |
+| key | VARCHAR | Setting identifier |
 | value | TEXT | The setting value stored as text |
 | created_at | DATETIME | Auto-set on creation |
 | updated_at | DATETIME | Auto-set on save |
@@ -40,11 +40,87 @@ Key-value store for configurable tenant behavior.
 ```mermaid
 erDiagram
     Tenant ||--o{ TenantSetting : "has many"
+    Tenant ||--o{ TenantRole : "has many"
+    Tenant ||--o{ TenantMembership : "has many"
+    TenantRole ||--o{ TenantMembership : "assigned in"
+    User ||--o{ TenantMembership : "belongs to"
 ```
 
-## Design Decisions
+`TenantRole` and `TenantMembership` are defined in `apps.users.models` but scoped to a tenant.
 
-- Tenants are the isolation boundary — all domain data belongs to exactly one tenant.
-- `details` stores general metadata about the tenant (not behavioral configuration).
-- `TenantSetting` stores configurable behavior (password policies, feature flags, rate limits) as queryable key-value rows.
-- Multi-tenancy uses a shared database with FK filtering, not schema-per-tenant.
+## API Endpoints
+
+Base path: `/api/tenants/`
+
+| Method | Path | Action | Description |
+|--------|------|--------|-------------|
+| GET | `/api/tenants/` | list | List tenants the user has access to |
+| POST | `/api/tenants/` | create | Create a new tenant |
+| GET | `/api/tenants/{id}/` | retrieve | Get tenant detail |
+| PUT | `/api/tenants/{id}/` | update | Full update |
+| PATCH | `/api/tenants/{id}/` | partial_update | Partial update |
+| DELETE | `/api/tenants/{id}/` | destroy | Delete tenant |
+
+### Response fields
+
+- **List:** `id`, `name`, `code`, `is_active`
+- **Detail / Write:** `id`, `name`, `code`, `is_active`, `details`, `created_at`, `updated_at`
+
+## Permissions
+
+| Action | Requirement |
+|--------|-------------|
+| Read (list, retrieve) | Authenticated user; non-superusers only see tenants they have an active membership in |
+| Write (create, update, delete) | Authenticated + superuser |
+
+## Validation Rules
+
+| Field | Constraint |
+|-------|------------|
+| name | Required, max 255 characters |
+| code | Required, max 100 characters, unique across all tenants |
+| is_active | Defaults to `true` |
+| details | Defaults to `{}`, accepts any valid JSON object |
+
+## Soft-Delete
+
+`Tenant` does **not** use soft-delete. It inherits from `models.Model` directly (not from `BaseModel`/`SoftDeletableModel`). Deleting a tenant is a hard delete with cascading removal of related settings, roles, and memberships.
+
+## Utilities (`utils.py`)
+
+### `get_tenant_id(request)`
+
+Extract `tenant_id` from JWT claims.
+
+```python
+from apps.tenants.utils import get_tenant_id
+
+tenant_id = get_tenant_id(request)  # "a1b2c3d4-..."
+```
+
+### `get_tenant_setting(tenant_id, key, default=None)`
+
+Fetch a single `TenantSetting` value.
+
+```python
+from apps.tenants.utils import get_tenant_setting
+
+min_length = get_tenant_setting(tenant_id, "password_min_length", default="8")
+```
+
+### `get_tenant_settings(tenant_id, prefix="")`
+
+Fetch all settings for a tenant, optionally filtered by key prefix.
+
+```python
+from apps.tenants.utils import get_tenant_settings
+
+# All settings
+all_settings = get_tenant_settings(tenant_id)
+# {"password_min_length": "8", "password_require_uppercase": "true", "feature_dark_mode": "enabled"}
+
+# Filtered by prefix
+password_settings = get_tenant_settings(tenant_id, prefix="password_")
+# {"password_min_length": "8", "password_require_uppercase": "true"}
+```
+
