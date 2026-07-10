@@ -1,7 +1,7 @@
 import pytest
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-from core.utils.validators import (
+from core.validators import (
     EmailDomainValidator,
     PhoneNumberValidator,
     UsernameValidator,
