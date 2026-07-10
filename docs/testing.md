@@ -6,14 +6,17 @@
 # Run all tests
 uv run pytest
 
-# Run only unit tests (no DB required)
-uv run pytest tests/unit -m "not django_db"
+# Run tests for a specific app
+uv run pytest apps/authentication/
 
-# Run only DB-dependent unit tests (requires PostgreSQL)
-uv run pytest tests/unit -m django_db
+# Run tests for core
+uv run pytest core/tests/
 
 # Run a specific test file
-uv run pytest path/to/test_file.py
+uv run pytest apps/tenants/tests/test_utils.py
+
+# Run only tests that don't need DB
+uv run pytest -m "not django_db"
 ```
 
 ## Settings
@@ -27,13 +30,66 @@ This is configured in `pyproject.toml` under `[tool.pytest.ini_options]`.
 
 ## Structure
 
-The `tests/` directory mirrors the source tree. Each test file maps to a source module with a `test_` prefix (e.g., `core/utils/security.py` -> `tests/unit/core/test_utils_security.py`).
+Tests live next to the code they test:
 
-- `unit/` — isolated tests, minimal or no DB access
-- `integration/` — full request/response cycle through API endpoints (planned)
+```
+core/
+  tests/
+    test_exceptions.py
+    test_permissions.py
+    ...
+
+apps/
+  authentication/
+    tests/
+      test_api_login.py
+      test_api_logout.py
+      ...
+  tenants/
+    tests/
+      test_api_tenants.py
+      test_utils.py
+      ...
+
+tests/
+  factories/          # Factory Boy factories, split per app
+    users.py
+    tenants.py
+  fixtures/           # Shared pytest fixtures, split per domain
+    clients.py
+    users.py
+    tenants.py
+  conftest.py         # Wires fixture modules via pytest_plugins
+```
 
 ## Conventions
 
 - Test classes use `Test*` prefix, test functions use `test_*` prefix
+- Pytest-style classes with bare `assert` (no `unittest.TestCase`)
 - Use `@pytest.mark.django_db` only when the test actually needs the database
 - Pure logic tests (validators, formatters, security utils) should not require DB access
+- Endpoint (integration) test files use the `test_api_*` prefix (e.g., `test_api_login.py`)
+- Factories split per app under `tests/factories/<app>.py`
+- Shared fixtures split per domain under `tests/fixtures/<domain>.py`
+
+## Factories
+
+Factories use [Factory Boy](https://factoryboy.readthedocs.io/):
+
+```python
+from tests.factories.users import UserFactory
+from tests.factories.tenants import TenantFactory
+```
+
+## Fixtures
+
+Shared fixtures are defined in `tests/fixtures/` and wired via `pytest_plugins` in `tests/conftest.py`:
+
+- `api_client` — bare `APIClient` instance
+- `user` — a standard user
+- `superuser` — a superuser
+- `tenant` — a tenant
+- `role` — a tenant role
+- `membership` — links `user` to `tenant`
+- `auth_client` — `APIClient` with JWT containing `tenant_id` claim
+- `superuser_client` — same for superuser
