@@ -1,6 +1,4 @@
-"""
-Datetime formatting utilities.
-"""
+"""Formatting utilities."""
 
 from datetime import datetime
 

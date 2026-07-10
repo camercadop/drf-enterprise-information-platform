@@ -1,5 +1,5 @@
 """
-Security and authentication utilities.
+Security utilities.
 """
 
 import re
