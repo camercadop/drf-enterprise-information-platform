@@ -58,18 +58,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default=f"postgresql://{env('POSTGRES_USER')}:{env('POSTGRES_PASSWORD')}@localhost:5432/{env('POSTGRES_DB')}",
-    ),
+    "default": env.db("DATABASE_URL"),
 }
 
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env(
-            "REDIS_URL", default=f"redis://:{env('REDIS_PASSWORD')}@localhost:6379/0"
-        ),
+        "LOCATION": env("REDIS_URL"),
     }
 }
 
