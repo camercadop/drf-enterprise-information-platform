@@ -34,7 +34,7 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v --tb=short"
-django_settings_module = "config.settings.dev"
+DJANGO_SETTINGS_MODULE = "config.settings.dev"
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
