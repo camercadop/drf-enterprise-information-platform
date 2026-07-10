@@ -27,7 +27,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://eip_user:eip_password@localhost:5432/eip_test
-      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SETTINGS_MODULE: config.settings.test
       SECRET_KEY: ci-test-secret-key
       ALLOWED_HOSTS: localhost
       REDIS_URL: redis://localhost:6379/0

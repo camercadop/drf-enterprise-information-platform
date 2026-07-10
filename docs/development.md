@@ -43,6 +43,14 @@ drf-enterprise-information-platform/
   tests/          # Test suite
 ```
 
+## Testing
+
+See [Testing](testing.md) for full details on structure, fixtures, and conventions.
+
+```bash
+uv run pytest
+```
+
 ## Code Quality
 
 ```bash
