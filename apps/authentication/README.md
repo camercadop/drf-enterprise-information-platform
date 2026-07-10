@@ -27,16 +27,39 @@ Behavior:
 
 The resolved `tenant_id` is stored in the JWT claims for downstream use.
 
+## User Object
+
+The `user` object returned on login:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | UUID | User primary key |
+| `email` | string | User email address |
+| `first_name` | string | First name |
+| `last_name` | string | Last name |
+| `tenant_id` | UUID | Resolved tenant for this session |
+
 ## Response Format
 
 All responses follow the platform envelope:
 
 ```json
 // Success
-{"status": "OK", "data": {"access": "...", "refresh": "...", "user": {...}}}
+{
+    "status": "OK", 
+    "data": {
+        "access": "...", 
+        "refresh": "...", 
+        "user": {...}
+    }
+}
 
 // Error
-{"status": "ERROR", "code": "tenant_required", "data": {"tenant_id": "...", "available_tenants": [...]}}
+{
+    "status": "ERROR", 
+    "code": "tenant_required", 
+    "data": {}
+}
 ```
 
 ## Token Lifecycle
@@ -64,7 +87,31 @@ sequenceDiagram
 - Refresh tokens rotate on each use — the previous one is automatically blacklisted
 - Logout explicitly blacklists the refresh token server-side
 
+## Refresh
+
+Request body:
+- `refresh` (required) — the current refresh token
+
+On success, returns a new `access` and `refresh` token pair. The old refresh token is blacklisted automatically.
+
+If the token is expired or already blacklisted, the response is:
+
+```json
+{
+    "status": "ERROR", 
+    "data": {
+        "detail": "Token is invalid or expired.", 
+        "code": "token_not_valid"
+    }
+}
+```
+
 ## Password Change
+
+Request body:
+- `old_password` (required)
+- `new_password` (required)
+- `new_password_confirmation` (required)
 
 Validations applied:
 1. Old password must be correct
@@ -74,9 +121,49 @@ Validations applied:
 
 On success, the current password hash is saved to `UserPasswordHistory` before updating.
 
+## Password Complexity
+
+The default policy applies when no tenant-level `password_policy` setting is configured:
+
+| Rule | Default |
+|------|---------|
+| `min_length` | 8 |
+| `require_uppercase` | true |
+| `require_lowercase` | true |
+| `require_digits` | true |
+| `require_special` | true |
+| `forbidden_words` | [] |
+
+Tenants can override these by storing a JSON object under the `password_policy` tenant setting.
+
 ## Models
 
 - `UserPasswordHistory` — stores hashed passwords per user to enforce reuse prevention.
+
+## Error Responses
+
+Beyond login errors (documented above), other endpoints return:
+
+| Endpoint | Condition | Error |
+|----------|-----------|-------|
+| Refresh | Expired or blacklisted token | `{"detail": "Token is invalid or expired.", "code": "token_not_valid"}` |
+| Logout | Invalid or expired refresh token | `{"refresh": ["Invalid or expired token."]}` |
+| Password change | Wrong old password | `{"old_password": ["Current password is incorrect."]}` |
+| Password change | Complexity failure | `{"new_password": ["Password must be at least 8 characters long.", ...]}` |
+| Password change | History reuse | `{"new_password": ["Cannot reuse any of your last 5 passwords."]}` |
+| Password change | Confirmation mismatch | `{"new_password_confirmation": ["Passwords do not match."]}` |
+| Any authenticated endpoint | Missing or invalid access token | `{"detail": "...", "code": "not_authenticated"}` |
+
+## JWT Claims
+
+The access token payload includes:
+
+| Claim | Description |
+|-------|-------------|
+| `user_id` | UUID of the authenticated user |
+| `tenant_id` | UUID of the resolved tenant for this session |
+
+Downstream views access the user via `request.user` (populated by `JWTAuthentication`). The `tenant_id` claim can be read from the token to scope queries to the active tenant.
 
 ## Configuration
 

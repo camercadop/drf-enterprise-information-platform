@@ -17,7 +17,7 @@ erDiagram
 
 ### User
 
-Authentication-critical fields only. Uses email as the login credential.
+Authentication-critical fields only. Uses email as the login credential. Inherits from `AbstractBaseUser` and Django's `PermissionsMixin`, which provides `is_superuser`, `groups`, and `user_permissions` fields.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -67,6 +67,25 @@ Links a user to a tenant with a role.
 | is_active | BOOLEAN | Whether membership is active |
 | joined_at | DATETIME | Auto-set on creation |
 
+## Constraints
+
+| Constraint | Fields | Effect |
+|------------|--------|--------|
+| `unique_role_per_tenant` | (tenant, name) on TenantRole | No duplicate role names within a tenant |
+| `unique_user_tenant` | (user, tenant) on TenantMembership | A user can only have one membership per tenant |
+| PROTECT on TenantMembership.role | role_id FK | Cannot delete a TenantRole while memberships reference it |
+
+## UserManager
+
+Custom manager on `User` with two methods:
+
+- `create_user(email, password, **extra_fields)` — normalizes email, hashes password, saves.
+- `create_superuser(email, password, **extra_fields)` — sets `is_superuser=True`, then delegates to `create_user`.
+
+## Soft-Delete
+
+Although the platform default is soft-delete via `deleted_at`/`deleted_by`, this module does not implement it yet. All deletions are currently hard-deletes.
+
 ## Design Decisions
 
 - `User` is platform-level — not scoped to any tenant. A user can belong to multiple tenants.
@@ -74,3 +93,4 @@ Links a user to a tenant with a role.
 - Each membership has exactly one `TenantRole`. Roles are defined per tenant independently.
 - `is_admin` on membership avoids querying role permissions for the most common privilege check.
 - `UserProfile` separates mutable personal data from the auth table to reduce migration churn.
+- Deleting a `TenantRole` that has active memberships is blocked (`PROTECT`) to prevent orphaned references.

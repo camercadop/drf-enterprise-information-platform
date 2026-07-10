@@ -43,13 +43,19 @@ flowchart TD
     I --> J[do_create]
     J --> K[post_create]
     K --> L[plugin: on_post_create]
+
+    M[update] --> N[plugin: on_pre_update]
+    N --> O[pre_update]
+    O --> P[do_update]
+    P --> Q[post_update]
+    Q --> R[plugin: on_post_update]
 ```
 
 ## Modules
 
 ### base/
 
-Abstract models, serializers, and views that all apps inherit from.
+Abstract base classes for models, serializers, and views.
 
 - `TimeStampedModel` — `created_at`, `updated_at`
 - `SoftDeletableModel` — `deleted_at`, `deleted_by`, soft-delete logic
@@ -60,8 +66,9 @@ Abstract models, serializers, and views that all apps inherit from.
 
 ### exceptions/
 
-Centralized exception hierarchy extending DRF's `APIException`:
+Centralized exception hierarchy and error handling.
 
+- `APIException` — base class for all custom exceptions (extends DRF's `APIException`)
 - `ValidationError` (400)
 - `AuthenticationError` (401)
 - `PermissionDeniedError` (403)
@@ -71,31 +78,42 @@ Centralized exception hierarchy extending DRF's `APIException`:
 
 ### renderers/
 
+Custom DRF response rendering.
+
 - `APIRenderer` — wraps successful responses in `{status: "OK", data: ...}`
 
 ### filters/
+
+Shared filter backends and filtersets.
 
 - `BaseFilterSet` — common filters (id, created_at, updated_at)
 - `SoftDeleteFilter` — toggle inclusion of soft-deleted records
 
 ### pagination/
 
+Pagination strategies and page metadata.
+
 - `CustomPagination` — enriched response with page metadata (default: 10 per page)
 - `StandardResultsSetPagination` — standard response (default: 20 per page)
 - `LargeResultsSetPagination` — optimized for large datasets (default: 100 per page)
+- `OptimizedPagination` — lightweight response with minimal overhead (default: 50 per page)
 
 ### permissions/
+
+Permission classes for access control.
 
 - `BasePermission` — ownership and tenant ownership checks
 - `IsOwnerOrReadOnly` — write access restricted to object owner
 - `IsTenantOwner` — access restricted to tenant owners
 - `IsTenantAdmin` — access restricted to tenant admins
 - `IsTeamMember` — access restricted to team members
+- `IsSuperUser` — access restricted to platform superusers
 
 ### utils/
 
-- `formatting` — datetime formatting helpers
-- `request` — client IP extraction, request data parsing
-- `security` — password complexity validation, API key generation, data masking
-- `tenant` — extract tenant from JWT, query tenant settings
-- `validators` — reusable field validators (username, phone, email domain, uniqueness, file size, date range, JSON schema)
+General-purpose utility functions.
+
+- `formatting` — string and data formatting helpers (dates, numbers, display values)
+- `request` — HTTP request inspection and data extraction
+- `security` — cryptographic operations, secrets handling, and data protection
+- `validators` — reusable field-level and cross-field validation logic
