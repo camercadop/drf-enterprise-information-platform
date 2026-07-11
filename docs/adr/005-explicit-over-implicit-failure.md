@@ -133,8 +133,6 @@ Rejected because:
 
 ## Related Documents
 
-- [ADR-001: Modular Monolith Architecture](001-modular-monolith-architecture.md)
-- [ADR-002: Convention Over Configuration](002-convention-over-configuration.md)
 - [ADR-003: Least Exposure by Default](003-least-exposure-by-default.md)
 - [ADR-004: Data Boundary Isolation](004-data-boundary-isolation.md)
 
