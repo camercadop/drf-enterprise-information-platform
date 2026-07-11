@@ -12,6 +12,7 @@ This directory contains the Architecture Decision Records for the platform.
 6. Language: English, concise, no filler. Written for a developer joining the project 6 months from now.
 7. An ADR should document one decision — not bundle multiple unrelated choices.
 8. An ADR can only reference ADRs with a lower number (previous decisions). Never reference future ADRs.
+9. ADRs document architectural principles and decisions — not implementation details. Technology-specific choices (frameworks, file layouts, code patterns) belong in separate implementation ADRs or documentation.
 
 ## When to Write an ADR
 
@@ -46,7 +47,7 @@ Do not propose solutions here — only describe the problem space.
 
 ### Decision
 
-Clear, concise statement of what was decided. One or two paragraphs maximum. A reader should understand the decision without reading any other section.
+Clear, concise statement of what was decided. One, two or three paragraphs maximum. A reader should understand the decision without reading any other section.
 
 ### Rationale
 
@@ -87,7 +88,7 @@ How to verify compliance. Prefer automated checks (linting rules, CI checks, gre
 
 ### Related Documents
 
-Links to previous ADRs and other documentation. Only reference ADRs with a lower number.
+Links to previous ADRs and other documentation. Only reference ADRs with a lower number. Only include ADRs that are actually cited in the document's reasoning — do not list all previous ADRs.
 
 ### Future Revisions
 

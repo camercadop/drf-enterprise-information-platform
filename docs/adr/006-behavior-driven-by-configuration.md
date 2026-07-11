@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -51,7 +51,7 @@ Benefits:
 Tradeoffs:
 
 - Requires upfront investment in configuration schema design and validation.
-- Some behaviors that would be trivial as an `if` statement require more structured implementation (strategy patterns, plugin registration).
+- Some behaviors that would be trivial as a conditional require more structured implementation.
 - Configuration drift between tenants becomes a management concern — requires tooling to audit and compare.
 
 Assumptions:
@@ -138,11 +138,10 @@ Rejected because:
 
 ## Validation Criteria
 
-- `grep -rn "tenant.*slug\|tenant.*name\|tenant.*id" --include="*.py" apps/` in business logic (excluding permission/filtering layers) returns zero identity-based branching.
-- `grep -rn "settings\.ENV\|settings\.ENVIRONMENT" --include="*.py" apps/` returns zero environment-based branching in application code.
+- Business logic contains zero conditions based on tenant identity or environment name (excluding permission/filtering layers).
 - Every feature flag or configurable behavior has a corresponding entry in the configuration schema with a default value.
-- The same Docker image is deployed to all environments — CI can verify image digest equality.
-- Tenant onboarding can be completed without modifying Python source files (verifiable via integration test).
+- The same deployable artifact is used across all environments — CI can verify artifact equality.
+- Tenant onboarding can be completed without modifying application source files.
 
 ## Related Documents
 
