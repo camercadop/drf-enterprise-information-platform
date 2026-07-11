@@ -3,7 +3,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -47,10 +50,11 @@ class LogoutAllView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
-        tokens = OutstandingToken.objects.filter(user=request.user)
+        tokens = OutstandingToken.objects.filter(user=request.user).exclude(
+            blacklistedtoken__isnull=False
+        )
         for token in tokens:
-            if not hasattr(token, "blacklistedtoken"):
-                token.blacklist()
+            BlacklistedToken.objects.create(token=token)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
