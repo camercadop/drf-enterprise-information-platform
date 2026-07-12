@@ -62,7 +62,7 @@ Abstract base classes for models, serializers, and views.
 - `CoreModel` — UUID PK + timestamps + soft-delete (platform-level entities)
 - `BaseModel` — CoreModel + tenant FK (tenant-scoped entities)
 - `BaseSerializer` — plugin system + template method lifecycle (`pre_create`/`do_create`/`post_create`, same for update and validate)
-- `BaseViewSet` — filtering, search, ordering, soft-delete filtering, per-action serializer/queryset dispatch
+- `BaseViewSet` — per-action serializer/queryset dispatch, lifecycle hooks, `tenant_scoping` attribute for opt-out of automatic tenant filtering
 
 ### exceptions/
 
@@ -86,8 +86,9 @@ Custom DRF response rendering.
 
 Shared filter backends and filtersets.
 
+- `SoftDeleteFilterBackend` — DRF filter backend that excludes soft-deleted records by default (applied globally via `DEFAULT_FILTER_BACKENDS`)
 - `BaseFilterSet` — common filters (id, created_at, updated_at)
-- `SoftDeleteFilter` — toggle inclusion of soft-deleted records
+- `SoftDeleteFilter` — django-filters FilterSet for toggling inclusion of soft-deleted records
 
 ### pagination/
 

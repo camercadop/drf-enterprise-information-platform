@@ -5,26 +5,8 @@ Base views for the enterprise platform.
 from typing import Any
 
 from django.db.models import Model, QuerySet
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, serializers, viewsets
-from rest_framework.filters import BaseFilterBackend
+from rest_framework import serializers, viewsets
 from rest_framework.permissions import BasePermission, IsAuthenticated
-from rest_framework.request import Request
-
-
-class SoftDeleteFilterBackend(BaseFilterBackend):
-    """
-    Excludes soft-deleted objects unless ?include_deleted=true is passed.
-    """
-
-    def filter_queryset(
-        self, request: Request, queryset: QuerySet[Any], view: Any
-    ) -> QuerySet[Any]:
-        if request.query_params.get("include_deleted", "").lower() == "true":
-            return queryset
-        if hasattr(queryset.model, "deleted_at"):
-            return queryset.filter(deleted_at__isnull=True)
-        return queryset
 
 
 class BaseViewSet(viewsets.ModelViewSet):
@@ -34,19 +16,16 @@ class BaseViewSet(viewsets.ModelViewSet):
     Attributes:
         serializer_classes: Per-action serializer mapping. Falls back to serializer_class.
         querysets: Per-action queryset mapping. Falls back to queryset.
+        tenant_scoping: Whether the TenantFilterBackend should scope queries.
+            Set to False for platform-level viewsets that don't belong to a tenant.
     """
 
-    filter_backends = [
-        DjangoFilterBackend,
-        filters.SearchFilter,
-        filters.OrderingFilter,
-        SoftDeleteFilterBackend,
-    ]
     search_fields: list[str] = []
     ordering_fields = ["created_at", "updated_at"]
     ordering = ["-created_at"]
     permission_classes = [IsAuthenticated]
     write_permission_classes: list[type[BasePermission]] | None = None
+    tenant_scoping: bool = True
 
     serializer_classes: dict[str, type[serializers.Serializer]] = {}
     querysets: dict[str, QuerySet[Any]] = {}

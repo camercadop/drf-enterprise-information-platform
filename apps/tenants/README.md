@@ -124,3 +124,27 @@ password_settings = get_tenant_settings(tenant_id, prefix="password_")
 # {"password_min_length": "8", "password_require_uppercase": "true"}
 ```
 
+## Tenant Filter Backend (`filters.py`)
+
+Automatic queryset-level tenant isolation (ADR-003, ADR-004). Registered globally via `DEFAULT_FILTER_BACKENDS` in DRF settings.
+
+### Behavior
+
+| Scenario | Result |
+|----------|--------|
+| Model has `tenant_id` field + JWT has `tenant_id` claim | Queryset filtered to that tenant |
+| Model has `tenant_id` field + no `tenant_id` claim | Empty queryset (denial) |
+| Model has no `tenant_id` field | No-op |
+| View sets `tenant_scoping = False` | No-op (explicit bypass) |
+
+### Opting out
+
+Set `tenant_scoping = False` on any viewset that needs cross-tenant access:
+
+```python
+class TenantViewSet(BaseViewSet):
+    tenant_scoping = False
+```
+
+This is required for platform-level models (like `Tenant` itself) and superuser admin views.
+

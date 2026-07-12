@@ -5,6 +5,22 @@ Base filters for the enterprise platform.
 from typing import Any
 
 import django_filters as filters
+from django.db.models import QuerySet
+from rest_framework.filters import BaseFilterBackend
+from rest_framework.request import Request
+
+
+class SoftDeleteFilterBackend(BaseFilterBackend):
+    """Excludes soft-deleted objects unless ?include_deleted=true is passed."""
+
+    def filter_queryset(
+        self, request: Request, queryset: QuerySet[Any], view: Any
+    ) -> QuerySet[Any]:
+        if request.query_params.get("include_deleted", "").lower() == "true":
+            return queryset
+        if hasattr(queryset.model, "deleted_at"):
+            return queryset.filter(deleted_at__isnull=True)
+        return queryset
 
 
 class BaseFilterSet(filters.FilterSet):
@@ -20,29 +36,6 @@ class BaseFilterSet(filters.FilterSet):
     class Meta:
         abstract = True
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
-        # Add common filters to all filter sets
-        self.filters["id"] = filters.NumberFilter()
-        self.filters["created_at"] = filters.DateTimeFilter()
-        self.filters["updated_at"] = filters.DateTimeFilter()
-
-    def get_filters(self) -> dict[str, Any]:
-        """
-        Get all filters including common ones.
-        """
-        filters_dict: dict[str, Any] = super().get_filters()
-        # Add common filters
-        filters_dict.update(
-            {
-                "id": filters.NumberFilter(),
-                "created_at": filters.DateTimeFilter(),
-                "updated_at": filters.DateTimeFilter(),
-            }
-        )
-        return filters_dict
-
 
 class SoftDeleteFilter(filters.FilterSet):
     """
@@ -52,7 +45,6 @@ class SoftDeleteFilter(filters.FilterSet):
     include_deleted = filters.BooleanFilter(
         field_name="deleted_at",
         label="Include deleted objects",
-        widget=filters.BooleanWidget,
     )
 
     class Meta:

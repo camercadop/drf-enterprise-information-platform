@@ -32,6 +32,7 @@ class TenantViewSet(BaseViewSet):
         "list": TenantListSerializer,
     }
     write_permission_classes = [IsSuperUser]
+    tenant_scoping = False
     search_fields = ["name", "code"]
     ordering_fields = ["name", "created_at"]
     ordering = ["name"]
@@ -59,21 +60,13 @@ class MembershipViewSet(BaseViewSet):
     ordering_fields = ["joined_at"]
     ordering = ["-joined_at"]
 
-    def get_tenant_id(self) -> str:
-        """Resolve tenant from JWT claim."""
-        tenant_id = get_tenant_id(self.request)
-        if not tenant_id:
-            raise PermissionDeniedError("No tenant context in token.")
-        return tenant_id
-
-    def get_queryset(self) -> QuerySet[TenantMembership]:
-        qs = super().get_queryset()
-        return qs.filter(tenant_id=self.get_tenant_id())
-
     def get_serializer_context(self) -> dict[str, Any]:
         context: dict[str, Any] = super().get_serializer_context()
         if self.action == "create":
-            context["tenant_id"] = self.get_tenant_id()
+            tenant_id = get_tenant_id(self.request)
+            if not tenant_id:
+                raise PermissionDeniedError("No tenant context in token.")
+            context["tenant_id"] = tenant_id
         return context
 
     @action(detail=True, methods=["post"])
@@ -106,11 +99,9 @@ class TeamViewSet(BaseViewSet):
     ordering_fields = ["name", "created_at"]
     ordering = ["name"]
 
-    def get_queryset(self) -> QuerySet[Team]:
-        qs = super().get_queryset()
+    @property
+    def tenant_scoping(self) -> bool:  # type: ignore[override]
+        """Superusers see all teams across tenants."""
         if self.request.user.is_superuser:  # type: ignore[union-attr]
-            return qs
-        return qs.filter(
-            tenant__memberships__user=self.request.user,
-            tenant__memberships__is_active=True,
-        )
+            return False
+        return True
