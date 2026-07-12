@@ -50,7 +50,20 @@ class AuditPlugin(SerializerPlugin):
 
 ### Registering Plugins
 
-Declare plugins in `Meta.extensions`:
+#### Global Plugins (settings-based)
+
+Plugins declared in `settings.SERIALIZER_PLUGINS` apply to every serializer that inherits from `BaseSerializer`. Each plugin decides internally whether to act (e.g., by inspecting the model for a specific field).
+
+```python
+# config/settings/base.py
+SERIALIZER_PLUGINS: list[str] = [
+    "apps.tenants.plugins.TenantInjectionSerializerPlugin",
+]
+```
+
+#### Local Plugins (per-serializer)
+
+Declare plugins in `Meta.extensions` to add them for a specific serializer:
 
 ```python
 class CompanySerializer(BaseSerializer):
@@ -60,13 +73,36 @@ class CompanySerializer(BaseSerializer):
         extensions = [AuditPlugin, SoftDeletablePlugin]
 ```
 
+#### Excluding Plugins
+
+Use `Meta.extensions_exclude` to opt out of global or local plugins:
+
+```python
+class PlatformReportSerializer(BaseSerializer):
+    class Meta:
+        model = PlatformReport
+        fields = ["id", "title"]
+        extensions_exclude = [TenantInjectionSerializerPlugin]
+```
+
+#### Resolution Order
+
+```
+final plugins = global (settings.SERIALIZER_PLUGINS, in order)
+               + local (Meta.extensions, in order)
+               - excluded (Meta.extensions_exclude)
+```
+
+Global plugins execute first, then local plugins.
+
 ### Rules
 
 - Plugins are **stateless**. They receive the serializer as argument for context access.
 - Plugins can **mutate** `validated_data` in `on_pre_create`/`on_pre_update`.
 - Plugins can **short-circuit** by raising any exception (typically DRF exceptions).
-- Plugins execute in **list order** (left to right).
+- Plugins execute in **resolution order** (global first, then local, left to right within each group).
 - There are **no dependencies** between plugins.
+- Global plugins must be **self-guarding** — they check applicability (e.g., model has `tenant_id`) and no-op otherwise.
 
 ### Available Hooks
 

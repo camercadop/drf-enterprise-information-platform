@@ -6,6 +6,8 @@ from django.db.models import QuerySet
 from rest_framework.filters import BaseFilterBackend
 from rest_framework.request import Request
 
+from apps.tenants.utils import get_tenant_id
+
 
 class TenantFilterBackend(BaseFilterBackend):
     """Automatically scopes querysets to the authenticated user's tenant.
@@ -29,15 +31,8 @@ class TenantFilterBackend(BaseFilterBackend):
         if not hasattr(model, "tenant_id"):
             return queryset
 
-        tenant_id = self._get_tenant_id(request)
+        tenant_id = get_tenant_id(request)
         if not tenant_id:
             return queryset.none()
 
         return queryset.filter(tenant_id=tenant_id)
-
-    def _get_tenant_id(self, request: Request) -> str | None:
-        """Extract tenant_id from JWT claims."""
-        if request.auth and hasattr(request.auth, "get"):
-            result: str | None = request.auth.get("tenant_id")
-            return result
-        return None

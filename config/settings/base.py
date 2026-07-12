@@ -104,6 +104,10 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "core.exceptions.handler.exception_handler",
 }
 
+SERIALIZER_PLUGINS: list[str] = [
+    "apps.tenants.plugins.TenantInjectionSerializerPlugin",
+]
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),

@@ -6,14 +6,20 @@ from apps.tenants.models import TenantSetting
 
 
 def get_tenant_id(request: Request) -> str | None:
-    """Extract tenant_id from the JWT token claims."""
+    """Extract tenant_id from the JWT token claims.
+
+    Args:
+        request: The DRF request object.
+    """
     if request.auth and hasattr(request.auth, "get"):
         result: str | None = request.auth.get("tenant_id")
         return result
     return None
 
 
-def get_tenant_setting(tenant_id: str, key: str, default: str | None = None) -> str | None:
+def get_tenant_setting(
+    tenant_id: str, key: str, default: str | None = None
+) -> str | None:
     """Get a single tenant setting value by key.
 
     Args:
