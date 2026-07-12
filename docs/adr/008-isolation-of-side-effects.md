@@ -92,6 +92,7 @@ Rejected because:
 - Side effects are discoverable — inspecting lifecycle hooks reveals the full picture of an operation's consequences.
 - Adding or removing a side effect does not require modifying business logic.
 - Failures in external systems do not corrupt primary data operations.
+- Read operations are structurally side-effect-free — they do not traverse lifecycle hooks, so they produce no side effects by construction.
 
 ### Negative
 
