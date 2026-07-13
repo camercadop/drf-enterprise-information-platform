@@ -102,6 +102,8 @@ REST_FRAMEWORK = {
         "core.renderers.APIRenderer",
     ],
     "EXCEPTION_HANDLER": "core.exceptions.handler.exception_handler",
+    "DEFAULT_PAGINATION_CLASS": "core.pagination.page.CustomPagination",
+    "PAGE_SIZE": 10,
 }
 
 SERIALIZER_PLUGINS: list[str] = [
@@ -109,8 +111,8 @@ SERIALIZER_PLUGINS: list[str] = [
 ]
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("ACCESS_TOKEN_LIFETIME_MINUTES", default=30)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("REFRESH_TOKEN_LIFETIME_DAYS", default=7)),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "ALGORITHM": "HS256",

@@ -57,7 +57,6 @@ Default deletion strategy across the platform:
 - `model.delete()` performs soft-delete (sets `deleted_at`)
 - `model.hard_delete()` performs actual deletion
 - Querysets exclude soft-deleted records by default
-- `SoftDeletablePlugin` handles representation in API responses
 
 ## Extensibility Model
 
@@ -66,7 +65,6 @@ Two complementary patterns for extending behavior:
 - **Plugins** — stateless classes for cross-cutting concerns (horizontal)
 - **Template methods** — overridable hooks for per-class customization (vertical)
 
-See `docs/guidelines/extensible-lifecycle-design.md` for details.
 
 ## Authentication
 

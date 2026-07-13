@@ -83,9 +83,12 @@ GitHub Actions runs lint, type check, and tests on every push to `main` and PR t
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [API Conventions](docs/api-conventions.md)
+- [Error Codes](docs/error-codes.md)
 - [Security](docs/security.md)
 - [Code Style](docs/code-style.md)
 - [Data Model](docs/data-model.md)
 - [Development Guide](docs/development.md)
+- [Deployment](docs/deployment.md)
 - [Testing](docs/testing.md)
 - [Continuous Integration](docs/ci.md)

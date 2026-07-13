@@ -339,6 +339,8 @@ Pagination is configured globally via `CustomPagination` in settings. All list a
 | `page_size` | 10 | 100 |
 | `page` (query param) | 1 | — |
 
+Response includes `count`, `page_size`, `current_page`, `total_pages`, and `results`. Clients derive navigation from `current_page` and `total_pages`.
+
 Clients can override page size with `?page_size=25`. To use a different pagination class on a specific viewset:
 
 ```python

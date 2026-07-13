@@ -15,6 +15,7 @@ Practical how-to documents for implementing features correctly in this project. 
 | [Input Validation](input-validation.md) | Field, serializer, and model-level validation |
 | [Multi-Tenancy](multi-tenancy.md) | Tenant-scoped models, query filtering, injection |
 | [Soft-Delete](soft-delete.md) | Deletion strategy, filter backend, serializer mixin |
+| [Inter-Module Communication](inter-module-communication.md) | Dependency direction, allowed interfaces, forbidden patterns |
 | [Writing READMEs](writing-readmes.md) | Folder-level documentation levels, structure, and rules |
 
 ## Related Documentation
