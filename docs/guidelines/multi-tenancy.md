@@ -6,14 +6,19 @@ How to implement tenant-scoped resources — from model inheritance and automati
 
 ## Overview
 
-Strategy: **shared database with tenant FK filtering, isolation at the permission layer.**
+Strategy: **shared database with tenant FK filtering, defense in depth per ADR-004.**
 
-A single database holds all tenants' data. Isolation is enforced at runtime through:
+A single database holds all tenants' data. Isolation is enforced at runtime through two independent layers:
 
-1. A `tenant` FK on every tenant-scoped model
-2. Automatic query filtering via `TenantFilterBackend`
-3. Server-side tenant injection via `TenantInjectionSerializerPlugin`
-4. Tenant context carried in JWT claims
+1. **View layer** — `TenantFilterBackend` reads `tenant_id` from the JWT and filters querysets
+2. **ORM layer** — `TenantManager` reads `tenant_id` from a request-scoped ContextVar and filters querysets independently
+
+Supporting mechanisms:
+
+3. A `tenant` FK on every tenant-scoped model
+4. Server-side tenant injection via `TenantInjectionSerializerPlugin`
+5. Tenant context carried in JWT claims
+6. `TenantJWTAuthentication` binds the scope ContextVar after token validation
 
 ---
 
@@ -22,27 +27,28 @@ A single database holds all tenants' data. Isolation is enforced at runtime thro
 ```mermaid
 sequenceDiagram
     participant Client
-    participant API
-    participant JWT
+    participant Auth as TenantJWTAuthentication
+    participant ContextVar as Scope ContextVar
     participant Filter as TenantFilterBackend
+    participant Manager as TenantManager
     participant Plugin as TenantInjectionPlugin
 
-    Client->>API: POST /api/auth/login/ {email, password, tenant_id?}
-    API->>API: Resolve membership
-    API->>JWT: Encode tenant_id in claims
-    API-->>Client: {access, refresh}
+    Client->>Auth: GET /api/invoices/ (Bearer token)
+    Auth->>Auth: Validate JWT, extract tenant_id
+    Auth->>ContextVar: bind_scope({tenant_id})
+    Auth-->>Filter: request.auth has tenant_id
+    Filter->>Filter: queryset.filter(tenant_id=...) [Layer 1]
+    Manager->>ContextVar: get_bound_scope()
+    Manager->>Manager: queryset.filter(tenant_id=...) [Layer 2]
+    Note over Filter,Manager: Both layers filter independently
+    Auth-->>Client: Scoped results
 
-    Client->>API: GET /api/invoices/ (Bearer token)
-    API->>JWT: Decode → extract tenant_id
-    JWT-->>Filter: tenant_id
-    Filter->>Filter: queryset.filter(tenant_id=...)
-    API-->>Client: Scoped results
-
-    Client->>API: POST /api/invoices/ (Bearer token)
-    API->>JWT: Decode → extract tenant_id
-    JWT-->>Plugin: tenant_id
+    Client->>Auth: POST /api/invoices/ (Bearer token)
+    Auth->>Auth: Validate JWT, extract tenant_id
+    Auth->>ContextVar: bind_scope({tenant_id})
+    Auth-->>Plugin: tenant_id from JWT
     Plugin->>Plugin: validated_data["tenant_id"] = tenant_id
-    API-->>Client: Created resource
+    Auth-->>Client: Created resource
 ```
 
 ### Extracting Tenant Context
@@ -92,7 +98,7 @@ classDiagram
 
 ### Tenant-Scoped Models
 
-Inherit from `TenantAwareModel` — includes UUID pk, timestamps, soft-delete, and a `tenant` FK:
+Inherit from `TenantAwareModel` — includes UUID pk, timestamps, soft-delete, a `tenant` FK, and `TenantManager`:
 
 ```python
 from apps.tenants.models import TenantAwareModel
@@ -103,6 +109,18 @@ class Invoice(TenantAwareModel):
     class Meta:
         abstract = False
         db_table = "invoices"
+```
+
+If a model defines its own schema but has a `tenant` FK (not inheriting `TenantAwareModel`), apply `TenantManager` directly:
+
+```python
+from apps.tenants.managers import TenantManager
+
+class TenantRole(models.Model):
+    tenant = models.ForeignKey("tenants.Tenant", on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+
+    objects = TenantManager()
 ```
 
 ### Platform-Level Models
@@ -125,7 +143,7 @@ class Tenant(BaseModel):
 
 ---
 
-## Query Filtering
+## Query Filtering (Layer 1 — View)
 
 `TenantFilterBackend` is registered globally and automatically scopes querysets.
 
@@ -143,6 +161,23 @@ flowchart TD
 - If the model has a `tenant_id` field → filters by the JWT's `tenant_id`
 - If no `tenant_id` claim is present → returns an empty queryset (deny by default, per ADR-004)
 - If the model has no `tenant_id` field → no-op
+
+## Query Filtering (Layer 2 — ORM)
+
+`TenantManager` reads the scope ContextVar (bound by `TenantJWTAuthentication`) and filters automatically:
+
+```mermaid
+flowchart TD
+    A[Model.objects.all/filter/get] --> B{Scope ContextVar bound?}
+    B -- Yes --> C[Filter queryset by tenant_id from scope]
+    B -- No --> D[Return unfiltered queryset]
+```
+
+- In API requests: scope is always bound → manager filters by tenant
+- In CLI/admin/migrations: no scope bound → manager returns unfiltered results
+- Use `.unscoped()` for explicit cross-tenant access in application code
+
+Both layers operate independently. If either is bypassed, the other still enforces isolation.
 
 ### Opting Out
 
@@ -220,11 +255,11 @@ The plugin checks `hasattr(model, "tenant_id")` and no-ops for models without a 
 
 ## Adding a New Tenant-Scoped Resource (Checklist)
 
-1. **Model** — inherit from `TenantAwareModel`
+1. **Model** — inherit from `TenantAwareModel` (or add `objects = TenantManager()` if using a custom base)
 2. **Serializer** — inherit from `BaseSerializer` or `DefaultModelSerializer`; exclude `tenant` from writable fields (the plugin handles it)
 3. **ViewSet** — inherit from `BaseViewSet`; leave `tenant_scoping = True` (default)
 4. **URLs** — register with the app's router
-5. **No extra wiring needed** — the global plugin and filter backend handle isolation automatically
+5. **No extra wiring needed** — the global plugin, filter backend, and manager handle isolation automatically
 
 ```python
 # serializers.py

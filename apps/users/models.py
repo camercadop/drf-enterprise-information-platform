@@ -9,6 +9,8 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 
+from apps.tenants.managers import TenantManager
+
 
 class UserManager(BaseUserManager["User"]):
     def create_user(
@@ -102,6 +104,8 @@ class TenantRole(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     # Timestamp when the role was created
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "users_roles"
         ordering = ["name"]
@@ -140,6 +144,8 @@ class TenantMembership(models.Model):
 
     joined_at = models.DateTimeField(auto_now_add=True)
     # Timestamp when the user joined the tenant
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "users_memberships"

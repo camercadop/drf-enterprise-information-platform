@@ -185,12 +185,16 @@ class MembershipViewSet(BaseViewSet):
 
 ## Tenant Isolation
 
-Tenant isolation is enforced at two levels:
+Tenant isolation is enforced at three levels:
 
 ```mermaid
 flowchart LR
-    subgraph "Query Level"
+    subgraph "Query Level (View)"
         A[TenantFilterBackend] --> B[Scopes queryset by JWT tenant_id]
+    end
+
+    subgraph "Query Level (ORM)"
+        F[TenantManager] --> G[Scopes queryset by ContextVar tenant_id]
     end
 
     subgraph "Object Level"
@@ -198,11 +202,15 @@ flowchart LR
     end
 
     E[Request] --> A
+    E --> F
     E --> C
 ```
 
-1. **Query level** — `TenantFilterBackend` scopes querysets automatically (see multi-tenancy guideline)
-2. **Object level** — `check_tenant_ownership` verifies the user belongs to the object's tenant
+1. **Query level (view)** — `TenantFilterBackend` scopes querysets from JWT claims (see multi-tenancy guideline)
+2. **Query level (ORM)** — `TenantManager` scopes querysets from the ContextVar bound by `TenantJWTAuthentication`
+3. **Object level** — `check_tenant_ownership` verifies the user belongs to the object's tenant
+
+Layers 1 and 2 are independent — both must fail for data to leak (ADR-004).
 
 For object-level checks in custom permissions:
 

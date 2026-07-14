@@ -36,7 +36,9 @@ TenantAwareModel (abstract) ← BaseModel
 
 Apps inherit from the appropriate level:
 - `BaseModel` — platform-level entities (no tenant scope)
-- `TenantAwareModel` — tenant-scoped domain entities
+- `TenantAwareModel` — tenant-scoped domain entities (inherits `BaseModel` + adds tenant FK + `TenantManager`)
+
+Models that define their own schema but have a `tenant` FK also use `TenantManager` directly for ORM-level isolation (e.g., `Team`, `TenantSetting`, `TenantRole`, `TenantMembership`).
 
 ---
 

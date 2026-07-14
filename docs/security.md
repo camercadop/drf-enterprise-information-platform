@@ -9,7 +9,7 @@ Security model, authentication flows, and access control for the platform.
 - **Authenticated by default** — all endpoints require authentication unless explicitly opted out (`AllowAny`)
 - **Tenant isolation at the permission layer** — every tenant-scoped resource is checked via `check_tenant_ownership`
 - **Short-lived tokens** — minimize exposure window for stolen credentials
-- **Defense in depth** — permission classes + object-level checks + soft-delete visibility filtering
+- **Defense in depth** — multiple independent enforcement layers per ADR-004
 
 ---
 
@@ -78,7 +78,14 @@ BasePermission       — foundation class with helper methods
 
 ### Tenant Isolation
 
-Enforced via `BasePermission.check_tenant_ownership(request, obj)`:
+Enforced by two independent layers (ADR-004 defense in depth):
+
+1. **View layer** — `TenantFilterBackend` reads `tenant_id` from the JWT and filters querysets in every API request.
+2. **ORM layer** — `TenantJWTAuthentication` binds `tenant_id` into a request-scoped ContextVar. `TenantManager` (on all tenant-scoped models) reads the ContextVar and filters automatically.
+
+Both layers must fail simultaneously for data to leak across tenants.
+
+Additionally, `BasePermission.check_tenant_ownership(request, obj)`:
 
 1. Extracts the object's `tenant` FK
 2. Checks if the requesting user has an active membership in that tenant

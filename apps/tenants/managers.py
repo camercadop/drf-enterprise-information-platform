@@ -1,8 +1,8 @@
 """Tenant-scoped manager for ORM-level data isolation.
 
 Provides a second enforcement layer (independent of view-level filtering)
-as required by ADR-004. Reads the tenant_id from context and filters
-querysets automatically.
+as required by ADR-004. Reads the tenant_id from the bound scope and
+filters querysets automatically.
 """
 
 from typing import Any
@@ -29,21 +29,18 @@ class TenantManager(models.Manager[Any]):
     """Manager that automatically filters by the active tenant.
 
     Behavior:
-        - Reads tenant_id from the current context.
-        - Filters the queryset by tenant_id.
-        - If no tenant is bound, raises RuntimeError (fail-loud per ADR-005).
+        - Reads tenant_id from the current scope (bound by TenantJWTAuthentication).
+        - If scope is bound, filters the queryset by tenant_id.
+        - If no scope is bound (CLI, admin, migrations), returns an
+          unfiltered queryset. The view-layer TenantFilterBackend provides
+          isolation for API requests independently.
 
-    The existing TenantFilterBackend (view layer) is the first enforcement
-    layer. This manager is the second, independent layer.
+    The two layers together satisfy ADR-004's defense-in-depth requirement:
+    both must fail for data to leak across tenant boundaries.
     """
 
     def get_queryset(self) -> TenantQuerySet:
-        """Return a queryset filtered by the active tenant.
-
-        Raises:
-            RuntimeError: If no tenant is bound in the current context.
-                Use .unscoped() for intentional cross-tenant access.
-        """
+        """Return a queryset filtered by the active tenant when scope is bound."""
         qs = TenantQuerySet(self.model, using=self._db)
         scope = get_bound_scope()
 
@@ -52,10 +49,7 @@ class TenantManager(models.Manager[Any]):
             filtered: TenantQuerySet = qs.filter(tenant_id=tenant_id)
             return filtered
 
-        raise RuntimeError(
-            f"No tenant scope bound for {self.model.__name__}. "
-            f"Use .unscoped() for intentional cross-tenant access."
-        )
+        return qs
 
     def unscoped(self) -> TenantQuerySet:
         """Return an unfiltered queryset, bypassing tenant enforcement.

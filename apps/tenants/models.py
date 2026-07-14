@@ -78,6 +78,8 @@ class TenantSetting(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     # Timestamp when the setting was last changed
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "tenants_settings"
         ordering = ["key"]
@@ -112,6 +114,8 @@ class Team(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
     # Timestamp when the team was last updated
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "tenants_teams"
