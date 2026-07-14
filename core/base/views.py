@@ -133,13 +133,17 @@ class BaseViewSet(viewsets.ModelViewSet):
         """Dispatch a named hook to all global serializer plugins.
 
         Passes the current action's serializer (for request context access)
-        followed by any additional arguments.
+        followed by any additional arguments. Skips dispatch if serializer
+        context is unavailable (e.g., no request bound).
 
         Args:
             hook: The plugin method name to invoke.
             *args: Positional arguments forwarded to the hook after the serializer.
         """
-        serializer = self.get_serializer()
+        try:
+            serializer = self.get_serializer()
+        except (AttributeError, AssertionError):
+            return
         for plugin in self._get_plugins():
             if hasattr(plugin, hook):
                 getattr(plugin, hook)(serializer, *args)
