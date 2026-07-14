@@ -22,6 +22,10 @@ How to run the platform in production — environment configuration, infrastruct
 | `ACCESS_TOKEN_LIFETIME_MINUTES` | JWT access token lifetime | `30` |
 | `REFRESH_TOKEN_LIFETIME_DAYS` | JWT refresh token lifetime | `7` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed origins | (none) |
+| `DB_CONN_MAX_AGE` | Database connection reuse lifetime (seconds) | `600` |
+| `DB_CONNECT_TIMEOUT` | Database connection timeout (seconds) | `5` |
+| `REDIS_CONNECT_TIMEOUT` | Redis connection timeout (seconds) | `3` |
+| `REDIS_SOCKET_TIMEOUT` | Redis per-operation timeout (seconds) | `3` |
 
 ---
 

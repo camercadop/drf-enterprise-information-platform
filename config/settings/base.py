@@ -62,13 +62,23 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": env.db("DATABASE_URL"),
+    "default": {
+        **env.db("DATABASE_URL"),
+        "CONN_MAX_AGE": env.int("DB_CONN_MAX_AGE", default=600),
+        "OPTIONS": {
+            "connect_timeout": env.int("DB_CONNECT_TIMEOUT", default=5),
+        },
+    },
 }
 
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": env("REDIS_URL"),
+        "OPTIONS": {
+            "socket_connect_timeout": env.int("REDIS_CONNECT_TIMEOUT", default=3),
+            "socket_timeout": env.int("REDIS_SOCKET_TIMEOUT", default=3),
+        },
     }
 }
 
