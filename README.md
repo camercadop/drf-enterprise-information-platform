@@ -1,6 +1,14 @@
 # DRF Enterprise Information Platform
 
+[![CI](https://github.com/camercadop/drf-enterprise-information-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/camercadop/drf-enterprise-information-platform/actions/workflows/ci.yml)
+
 Multi-tenant enterprise platform built with Django REST Framework. Designed as a modular monolith with convention-over-configuration defaults, a plugin-based extensibility model, and security by default.
+
+## Why This Exists
+
+Enterprise applications share recurring infrastructure challenges: tenant isolation, consistent API contracts, audit trails, and authentication that scales across organizations. Building these from scratch for each project leads to inconsistent implementations, security gaps, and duplicated effort.
+
+This platform solves these problems once — so domain teams can focus on business logic instead of reinventing infrastructure.
 
 ## Tech Stack
 
@@ -43,6 +51,36 @@ docs/           # Documentation
 tests/          # Test suite
 ```
 
+## Architecture Overview
+
+```mermaid
+graph TD
+    Client[API Client] --> Views
+
+    subgraph apps["apps/ — Domain Modules"]
+        Views[Views / ViewSets]
+        Serializers[Serializers]
+        Models[Models]
+    end
+
+    subgraph core["core/ — Framework Foundations"]
+        BaseViews[Base Views]
+        BaseSerializers[Base Serializers + Plugins]
+        BaseModels[Base Models]
+        Permissions[Permissions]
+        Renderer[API Renderer]
+    end
+
+    Views --> BaseViews
+    Serializers --> BaseSerializers
+    Models --> BaseModels
+    Views --> Permissions
+    Views --> Renderer
+
+    BaseModels --> PostgreSQL[(PostgreSQL)]
+    BaseViews --> Redis[(Redis)]
+```
+
 ## Quick Start
 
 ### Prerequisites
@@ -82,6 +120,7 @@ GitHub Actions runs lint, type check, and tests on every push to `main` and PR t
 
 ## Documentation
 
+- [Vision](docs/vision.md)
 - [Architecture](docs/architecture.md)
 - [API Conventions](docs/api-conventions.md)
 - [Error Codes](docs/error-codes.md)
@@ -92,3 +131,7 @@ GitHub Actions runs lint, type check, and tests on every push to `main` and PR t
 - [Deployment](docs/deployment.md)
 - [Testing](docs/testing.md)
 - [Continuous Integration](docs/ci.md)
+
+## License
+
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
