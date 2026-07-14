@@ -103,6 +103,19 @@ Do not serve static files through Django/Gunicorn in production.
 
 ---
 
+## Health Check Endpoints
+
+Two unauthenticated endpoints for orchestrator probes:
+
+| Endpoint | Purpose | Success | Failure |
+|----------|---------|---------|--------|
+| `GET /health/live/` | Liveness — process is running | 200 | N/A |
+| `GET /health/ready/` | Readiness — DB and Redis reachable | 200 | 503 |
+
+Configure orchestrator probes to use these paths (e.g., Kubernetes `livenessProbe` and `readinessProbe`, ECS health checks).
+
+---
+
 ## Scaling Considerations
 
 - The application is stateless — scale horizontally by adding instances
