@@ -4,14 +4,22 @@ Base views for the enterprise platform.
 
 from typing import Any
 
+from django.conf import settings
 from django.db.models import Model, QuerySet
+from django.utils.module_loading import import_string
 from rest_framework import serializers, viewsets
 from rest_framework.permissions import BasePermission, IsAuthenticated
+
+from core.base.serializers import SerializerPlugin
 
 
 class BaseViewSet(viewsets.ModelViewSet):
     """
     Base viewset with common functionality for all models.
+
+    Provides per-action serializer/queryset dispatch, data cleaning hooks,
+    pre_*/post_* lifecycle methods, and global plugin dispatch for
+    cross-cutting concerns (e.g., audit logging).
 
     Attributes:
         serializer_classes: Per-action serializer mapping. Falls back to serializer_class.
@@ -102,9 +110,36 @@ class BaseViewSet(viewsets.ModelViewSet):
         self.pre_destroy(instance)
         instance.delete()
         self.post_destroy(instance)
+        self._run_plugins("on_post_destroy", instance)
 
     def pre_destroy(self, instance: Model) -> None:
         pass
 
     def post_destroy(self, instance: Model) -> None:
         pass
+
+    # --- Plugin dispatch ---
+
+    def _get_plugins(self) -> list[SerializerPlugin]:
+        """Resolve global serializer plugins from settings.
+
+        Returns:
+            List of instantiated plugin objects.
+        """
+        global_paths: list[str] = getattr(settings, "SERIALIZER_PLUGINS", [])
+        return [import_string(path)() for path in global_paths]
+
+    def _run_plugins(self, hook: str, *args: Any) -> None:
+        """Dispatch a named hook to all global serializer plugins.
+
+        Passes the current action's serializer (for request context access)
+        followed by any additional arguments.
+
+        Args:
+            hook: The plugin method name to invoke.
+            *args: Positional arguments forwarded to the hook after the serializer.
+        """
+        serializer = self.get_serializer()
+        for plugin in self._get_plugins():
+            if hasattr(plugin, hook):
+                getattr(plugin, hook)(serializer, *args)

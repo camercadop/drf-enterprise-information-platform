@@ -162,3 +162,5 @@ erDiagram
 - Stores the hashed password (never plaintext) each time a user changes their password.
 - On password change, the current hash is saved to history before the new password is set.
 - Validation rejects any new password that matches the last 5 entries (configurable via `PASSWORD_HISTORY_LIMIT`).
+
+

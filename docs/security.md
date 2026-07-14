@@ -156,3 +156,14 @@ POST /api/auth/password/change/ {old_password, new_password}
 - `core.utils.security.mask_sensitive_data` — masks strings preserving only first/last N characters
 - `core.utils.security.generate_api_key` — cryptographically secure random key generation
 - Passwords are never stored in plaintext — Django's `make_password`/`check_password` used throughout
+
+---
+
+## Audit Trail
+
+Every state-changing operation (create, update, delete) produces an immutable audit record per ADR-009. See [Data Model](data-model.md#system-audit) for schema details.
+
+- Recorded automatically via `AuditPlugin` (global serializer plugin)
+- Records: actor, action, target resource, tenant boundary, timestamp, and changes
+- Append-only — application code cannot modify or delete audit records
+- Scoped to tenant boundary — one tenant's audit records are isolated from another's

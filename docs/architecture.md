@@ -40,6 +40,12 @@ Provides base classes that all domain modules inherit from. This layer defines:
 
 Each module is a self-contained Django app with its own models, serializers, views, and URLs. Modules communicate through well-defined interfaces (not direct imports between apps).
 
+### apps/ — System Modules (sys_ prefix)
+
+Infrastructure apps that provide cross-cutting system-level concerns. Distinguished from domain modules by the `sys_` prefix.
+
+- **sys_audit** — Append-only audit trail. Records every state-changing operation (create, update, delete) with actor, target, boundary context, and changes. Implemented as a global serializer plugin (`AuditPlugin`) attached at lifecycle boundaries per ADR-008.
+
 ## Multi-Tenancy
 
 Strategy: shared database with tenant FK filtering.

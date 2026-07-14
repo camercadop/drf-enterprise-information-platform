@@ -26,6 +26,7 @@ class SerializerPlugin:
         on_post_create(serializer, instance)
         on_pre_update(serializer, instance, validated_data)
         on_post_update(serializer, instance)
+        on_post_destroy(serializer, instance)
         on_pre_validate(serializer, data)
         on_post_validate(serializer, validated_data)
     """
@@ -97,8 +98,6 @@ class BaseSerializer(serializers.ModelSerializer):
             if hasattr(plugin, hook):
                 getattr(plugin, hook)(self, *args, **kwargs)
 
-
-
     # --- Create lifecycle ---
 
     def create(self, validated_data: dict[str, Any]) -> models.Model:
@@ -123,12 +122,16 @@ class BaseSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def post_create(self, instance: models.Model, validated_data: dict[str, Any]) -> None:
+    def post_create(
+        self, instance: models.Model, validated_data: dict[str, Any]
+    ) -> None:
         """Hook called after do_create. Override for side effects."""
 
     # --- Update lifecycle ---
 
-    def update(self, instance: models.Model, validated_data: dict[str, Any]) -> models.Model:
+    def update(
+        self, instance: models.Model, validated_data: dict[str, Any]
+    ) -> models.Model:
         """Update a model instance with full plugin and hook execution.
 
         Subclasses should not override this method. Use pre_update/do_update/post_update
@@ -141,17 +144,23 @@ class BaseSerializer(serializers.ModelSerializer):
         self._run_plugins("on_post_update", instance)
         return instance
 
-    def pre_update(self, instance: models.Model, validated_data: dict[str, Any]) -> None:
+    def pre_update(
+        self, instance: models.Model, validated_data: dict[str, Any]
+    ) -> None:
         """Hook called before do_update. Override to prepare data."""
 
-    def do_update(self, instance: models.Model, validated_data: dict[str, Any]) -> models.Model:
+    def do_update(
+        self, instance: models.Model, validated_data: dict[str, Any]
+    ) -> models.Model:
         """Perform the actual model update and save."""
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
 
-    def post_update(self, instance: models.Model, validated_data: dict[str, Any]) -> None:
+    def post_update(
+        self, instance: models.Model, validated_data: dict[str, Any]
+    ) -> None:
         """Hook called after do_update. Override for side effects."""
 
     # --- Validate lifecycle ---

@@ -18,7 +18,7 @@ Abstract base classes that all domain models, serializers, and viewsets inherit 
 
 ### Serializers
 
-- `SerializerPlugin` — base class for stateless serializer plugins (hooks: `on_pre_create`, `on_post_create`, `on_pre_update`, `on_post_update`, `on_pre_validate`, `on_post_validate`)
+- `SerializerPlugin` — base class for stateless serializer plugins (hooks: `on_pre_create`, `on_post_create`, `on_pre_update`, `on_post_update`, `on_post_destroy`, `on_pre_validate`, `on_post_validate`)
 - `BaseSerializer` — `ModelSerializer` with plugin dispatch and `pre_*/do_*/post_*` template methods for create, update, and validate
 - `SoftDeletableSerializerMixin` — adds `is_deleted` flag and hides delete fields on active records
 - `DefaultModelSerializer` — combines `SoftDeletableSerializerMixin` + `BaseSerializer`; use as the default parent for concrete serializers
@@ -26,9 +26,10 @@ Abstract base classes that all domain models, serializers, and viewsets inherit 
 ### Views
 
 - `SoftDeleteFilterBackend` — excludes soft-deleted objects unless `?include_deleted=true`
-- `BaseViewSet` — `ModelViewSet` with per-action serializer/queryset dispatch, data cleaning hooks, and `pre_*/post_*` lifecycle methods for create, update, and destroy
+- `BaseViewSet` — `ModelViewSet` with per-action serializer/queryset dispatch, data cleaning hooks, plugin dispatch, and `pre_*/post_*` lifecycle methods for create, update, and destroy
 - `clean_create_data(data)` — view-level hook to transform raw request data before serializer instantiation on create
 - `clean_update_data(data)` — view-level hook to transform raw request data before serializer instantiation on update
+- `_run_plugins(hook, *args)` — dispatch a named hook to all global serializer plugins (provides request context via serializer)
 
 ## Lifecycle Execution Order
 
@@ -37,6 +38,13 @@ Plugins wrap around template methods. The same pattern applies to create, update
 ```mermaid
 flowchart LR
     A[plugin on_pre_*] --> B[pre_*] --> C[do_*] --> D[post_*] --> E[plugin on_post_*]
+```
+
+For destroy, plugins are dispatched from the view layer after the operation completes:
+
+```mermaid
+flowchart LR
+    A[pre_destroy] --> B[instance.delete] --> C[post_destroy] --> D[plugin on_post_destroy]
 ```
 
 ## Soft-Delete Behavior
