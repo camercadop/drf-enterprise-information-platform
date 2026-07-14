@@ -6,9 +6,8 @@ Framework foundations shared by all domain apps. Provides base classes, utilitie
 
 ```mermaid
 classDiagram
-    TimeStampedModel <|-- CoreModel
-    SoftDeletableModel <|-- CoreModel
-    CoreModel <|-- BaseModel
+    TimeStampedModel <|-- BaseModel
+    SoftDeletableModel <|-- BaseModel
 
     class TimeStampedModel {
         +created_at
@@ -20,11 +19,8 @@ classDiagram
         +delete()
         +hard_delete()
     }
-    class CoreModel {
-        +id (UUID)
-    }
     class BaseModel {
-        +tenant (FK)
+        +id (UUID)
     }
 ```
 
@@ -59,10 +55,9 @@ Abstract base classes for models, serializers, and views.
 
 - `TimeStampedModel` — `created_at`, `updated_at`
 - `SoftDeletableModel` — `deleted_at`, `deleted_by`, soft-delete logic
-- `CoreModel` — UUID PK + timestamps + soft-delete (platform-level entities)
-- `BaseModel` — CoreModel + tenant FK (tenant-scoped entities)
+- `BaseModel` — UUID PK + timestamps + soft-delete
 - `BaseSerializer` — plugin system + template method lifecycle (`pre_create`/`do_create`/`post_create`, same for update and validate)
-- `BaseViewSet` — per-action serializer/queryset dispatch, lifecycle hooks, `tenant_scoping` attribute for opt-out of automatic tenant filtering
+- `BaseViewSet` — per-action serializer/queryset dispatch, lifecycle hooks
 
 ### exceptions/
 

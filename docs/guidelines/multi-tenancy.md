@@ -73,31 +73,31 @@ classDiagram
         +delete()
         +hard_delete()
     }
-    class CoreModel {
+    class BaseModel {
         <<abstract>>
         +UUID id
     }
-    class BaseModel {
+    class TenantAwareModel {
         <<abstract>>
         +FK tenant
     }
 
-    TimeStampedModel <|-- CoreModel
-    SoftDeletableModel <|-- CoreModel
-    CoreModel <|-- BaseModel
+    TimeStampedModel <|-- BaseModel
+    SoftDeletableModel <|-- BaseModel
+    BaseModel <|-- TenantAwareModel
 
-    note for CoreModel "Platform-level entities\n(no tenant scope)"
-    note for BaseModel "Tenant-scoped entities"
+    note for BaseModel "Platform-level entities\n(no tenant scope)"
+    note for TenantAwareModel "Tenant-scoped entities"
 ```
 
 ### Tenant-Scoped Models
 
-Inherit from `BaseModel` — includes UUID pk, timestamps, soft-delete, and a `tenant` FK:
+Inherit from `TenantAwareModel` — includes UUID pk, timestamps, soft-delete, and a `tenant` FK:
 
 ```python
-from core.base.models import BaseModel
+from apps.tenants.models import TenantAwareModel
 
-class Invoice(BaseModel):
+class Invoice(TenantAwareModel):
     number = models.CharField(max_length=50)
 
     class Meta:
@@ -107,12 +107,12 @@ class Invoice(BaseModel):
 
 ### Platform-Level Models
 
-Inherit from `CoreModel` — same as `BaseModel` but without the tenant FK:
+Inherit from `BaseModel` — same as `TenantAwareModel` but without the tenant FK:
 
 ```python
-from core.base.models import CoreModel
+from core.base.models import BaseModel
 
-class Tenant(CoreModel):
+class Tenant(BaseModel):
     name = models.CharField(max_length=255)
 ```
 
@@ -120,8 +120,8 @@ class Tenant(CoreModel):
 
 | The resource belongs to a tenant | Use |
 |----------------------------------|-----|
-| Yes | `BaseModel` |
-| No (platform-wide) | `CoreModel` |
+| Yes | `TenantAwareModel` |
+| No (platform-wide) | `BaseModel` |
 
 ---
 
@@ -220,7 +220,7 @@ The plugin checks `hasattr(model, "tenant_id")` and no-ops for models without a 
 
 ## Adding a New Tenant-Scoped Resource (Checklist)
 
-1. **Model** — inherit from `BaseModel`
+1. **Model** — inherit from `TenantAwareModel`
 2. **Serializer** — inherit from `BaseSerializer` or `DefaultModelSerializer`; exclude `tenant` from writable fields (the plugin handles it)
 3. **ViewSet** — inherit from `BaseViewSet`; leave `tenant_scoping = True` (default)
 4. **URLs** — register with the app's router
@@ -277,11 +277,11 @@ Use tenant settings for runtime-configurable behavior (password policies, featur
 
 | Scenario | Approach |
 |----------|----------|
-| Resource belongs to a single tenant | Inherit from `BaseModel`; leave `tenant_scoping = True` (default) |
-| Platform-level resource (no tenant) | Inherit from `CoreModel`; set `tenant_scoping = False` on viewset |
+| Resource belongs to a single tenant | Inherit from `TenantAwareModel`; leave `tenant_scoping = True` (default) |
+| Platform-level resource (no tenant) | Inherit from `BaseModel`; set `tenant_scoping = False` on viewset |
 | Superuser needs cross-tenant read access | Use `tenant_scoping` as a property that returns `False` for superusers |
 | Superuser creates a tenant-scoped resource | Superuser must select a tenant context — plugin still requires a claim |
-| Endpoint is public (no auth) | Use `CoreModel` or set `tenant_scoping = False`; no JWT means no tenant claim |
+| Endpoint is public (no auth) | Use `BaseModel` or set `tenant_scoping = False`; no JWT means no tenant claim |
 | Need per-tenant runtime configuration | Use `TenantSetting` via `get_tenant_setting()` |
 | Need to filter by additional fields beyond tenant | Override `get_queryset` for the extra filter; tenant filtering is still automatic |
-| Migrating an existing model to tenant-scoped | Add `tenant` FK, inherit from `BaseModel`, backfill existing rows, remove `tenant_scoping = False` |
+| Migrating an existing model to tenant-scoped | Add `tenant` FK, inherit from `TenantAwareModel`, backfill existing rows, remove `tenant_scoping = False` |

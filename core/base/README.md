@@ -4,14 +4,17 @@ Abstract base classes that all domain models, serializers, and viewsets inherit 
 
 ## API
 
+### Context (`context.py`)
+
+- `bind_scope(scope)` — bind a boundary scope dict (e.g., `{"tenant_id": "uuid"}`) to the current context. Returns a token for unbinding.
+- `get_bound_scope()` — return the currently bound scope dict, or `{}` if unbound.
+- `unbind_scope(token)` — reset the scope to its previous state.
+
 ### Models
 
 - `TimeStampedModel` — abstract model with `created_at` and `updated_at` fields
 - `SoftDeletableModel` — abstract model with `deleted_at`/`deleted_by` and soft-delete override
-- `CoreModel` — UUID pk + timestamps + soft-delete for platform-level (non-tenant) models
-- `BaseModel` — extends `CoreModel` with a tenant FK for tenant-scoped resources
-
-Use `CoreModel` for platform-wide entities that exist outside tenant scope (e.g. `Tenant` itself). Use `BaseModel` for everything else.
+- `BaseModel` — UUID pk + timestamps + soft-delete for all platform models
 
 ### Serializers
 

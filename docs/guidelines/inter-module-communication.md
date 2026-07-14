@@ -54,10 +54,10 @@ When module A needs data or behavior from module B, use these patterns (in order
 Reference another module's model via UUID FK. This is the standard approach for relational data:
 
 ```python
-from apps.tenants.models import Tenant
+from apps.users.models import User
 
-class Document(BaseModel):
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="documents")
+class Document(TenantAwareModel):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="documents")
 ```
 
 ### 2. Public Utility Functions

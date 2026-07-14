@@ -30,7 +30,7 @@ flowchart TD
 
 ### Inheritance
 
-Any model inheriting from `CoreModel` or `BaseModel` automatically gets soft-delete fields:
+Any model inheriting from `BaseModel` or `TenantAwareModel` automatically gets soft-delete fields:
 
 ```python
 class SoftDeletableModel(models.Model):
@@ -143,7 +143,7 @@ def perform_destroy(self, instance: Model) -> None:
 
 ## Checklist for New Resources
 
-1. Inherit from `BaseModel` or `CoreModel` — soft-delete fields are included automatically
+1. Inherit from `TenantAwareModel` or `BaseModel` — soft-delete fields are included automatically
 2. Use `DefaultModelSerializer` — adds `is_deleted` representation
 3. No extra view configuration needed — `SoftDeleteFilterBackend` and `perform_destroy` handle it
 4. Do not add `deleted_at`/`deleted_by` to serializer `fields` unless you want them visible on active records

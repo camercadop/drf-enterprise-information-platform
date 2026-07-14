@@ -290,7 +290,7 @@ Deconstructible validators for use on model fields. Located in `core.validators.
 ```python
 from core.validators.fields import EmailDomainValidator
 
-class Employee(BaseModel):
+class Employee(TenantAwareModel):
     email = models.EmailField(
         validators=[EmailDomainValidator(allowed_domains=["company.com"])]
     )

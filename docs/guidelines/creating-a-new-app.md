@@ -68,16 +68,16 @@ Choose the appropriate base class:
 
 | Resource belongs to a tenant? | Inherit from |
 |-------------------------------|--------------|
-| Yes | `BaseModel` |
-| No (platform-level) | `CoreModel` |
+| Yes | `TenantAwareModel` |
+| No (platform-level) | `BaseModel` |
 
 ```python
 from django.db import models
 
-from core.base.models import BaseModel
+from apps.tenants.models import TenantAwareModel
 
 
-class Invoice(BaseModel):
+class Invoice(TenantAwareModel):
     number = models.CharField(max_length=50)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
 
@@ -194,7 +194,7 @@ By inheriting from the platform base classes, these behaviors activate automatic
 | Forgetting to add the app to `INSTALLED_APPS` | Migrations won't be detected, models won't load | Add `"apps.<app_name>"` to `config/settings/base.py` |
 | Including `tenant` in serializer writable fields | Client can forge tenant ownership | Omit it — `TenantInjectionSerializerPlugin` handles injection |
 | Missing `app_name` in `urls.py` | URL reversing fails (`reverse("app:view-name")`) | Always set `app_name = "<app_name>"` |
-| Using `models.AutoField` or `default_auto_field` | Inconsistent with platform UUID primary keys | Inherit from `BaseModel`/`CoreModel` — they define the PK |
+| Using `models.AutoField` or `default_auto_field` | Inconsistent with platform UUID primary keys | Inherit from `TenantAwareModel`/`BaseModel` — they define the PK |
 | Putting reusable utilities in the app | Cross-app imports create circular dependencies | Shared logic belongs in `core/` |
 | Skipping the README | Other developers can't understand the module's purpose | Every app must have a `README.md` |
 | Creating migrations before registering in `INSTALLED_APPS` | Django can't find the app to generate migrations | Register first, then run `makemigrations` |
@@ -207,8 +207,8 @@ By inheriting from the platform base classes, these behaviors activate automatic
 |----------|----------|
 | Feature represents a distinct domain boundary | Create a new app |
 | Utility/helper code used across apps | Add to `core/` |
-| Resource belongs to a tenant | Inherit from `BaseModel` |
-| Platform-level resource (no tenant) | Inherit from `CoreModel` |
+| Resource belongs to a tenant | Inherit from `TenantAwareModel` |
+| Platform-level resource (no tenant) | Inherit from `BaseModel` |
 | Need elevated write permissions | Set `write_permission_classes` on the viewset |
 | Need custom query filtering beyond tenant | Override `get_queryset` on the viewset |
 | Feature extends an existing domain (e.g., adding a sub-resource) | Add to the existing app, not a new one |

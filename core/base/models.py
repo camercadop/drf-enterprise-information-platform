@@ -59,10 +59,10 @@ class SoftDeletableModel(models.Model):
         return cls.objects.filter(deleted_at__isnull=False)
 
 
-class CoreModel(TimeStampedModel, SoftDeletableModel):
-    """
-    Base model with UUID pk, timestamps, and soft delete.
-    Use for platform-level models that don't belong to a tenant.
+class BaseModel(TimeStampedModel, SoftDeletableModel):
+    """Default base model for all platform resources.
+
+    Provides UUID pk, timestamps, and soft delete.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -76,19 +76,3 @@ class CoreModel(TimeStampedModel, SoftDeletableModel):
         Override in child classes.
         """
         return f"/api/{self.__class__.__name__.lower()}s/{self.pk}/"
-
-
-class BaseModel(CoreModel):
-    """
-    Default model for all tenant-scoped resources.
-    """
-
-    tenant = models.ForeignKey(
-        "tenants.Tenant",
-        on_delete=models.CASCADE,
-        related_name="%(class)s_set",
-        db_index=True,
-    )
-
-    class Meta:
-        abstract = True

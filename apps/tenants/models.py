@@ -2,6 +2,30 @@ import uuid
 
 from django.db import models
 
+from apps.tenants.managers import TenantManager
+from core.base.models import BaseModel
+
+
+class TenantAwareModel(BaseModel):
+    """Default model for all tenant-scoped resources.
+
+    Adds a tenant FK and uses TenantManager to enforce tenant isolation
+    at the ORM level (second enforcement layer per ADR-004).
+    """
+
+    tenant = models.ForeignKey(
+        "tenants.Tenant",
+        on_delete=models.CASCADE,
+        related_name="%(class)s_set",
+        db_index=True,
+    )
+    # The tenant this resource belongs to
+
+    objects = TenantManager()
+
+    class Meta:
+        abstract = True
+
 
 class Tenant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -27,16 +27,16 @@ SoftDeletableModel (abstract)
     ├── deleted_at
     └── deleted_by
 
-CoreModel (abstract) ← TimeStampedModel + SoftDeletableModel
+BaseModel (abstract) ← TimeStampedModel + SoftDeletableModel
     └── id (UUID, PK)
 
-BaseModel (abstract) ← CoreModel
+TenantAwareModel (abstract) ← BaseModel
     └── tenant (FK → Tenant)
 ```
 
 Apps inherit from the appropriate level:
-- `CoreModel` — platform-level entities (no tenant scope)
-- `BaseModel` — tenant-scoped domain entities
+- `BaseModel` — platform-level entities (no tenant scope)
+- `TenantAwareModel` — tenant-scoped domain entities
 
 ---
 

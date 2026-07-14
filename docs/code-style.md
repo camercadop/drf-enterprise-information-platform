@@ -20,8 +20,8 @@ How the code should look — formatting, structure, naming, and structural conve
 
 ## Models
 
-- All tenant-scoped models inherit from `BaseModel` (includes timestamps + soft-delete + tenant FK)
-- Use `CoreModel` for platform-level models that don't belong to a tenant
+- All tenant-scoped models inherit from `TenantAwareModel` (includes timestamps + soft-delete + tenant FK)
+- Use `BaseModel` for platform-level models that don't belong to a tenant
 - All models use UUID as primary key (`primary_key=True`)
 - Do not set `default_auto_field` in app configs
 - Add a comment under each field explaining its purpose

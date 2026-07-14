@@ -16,8 +16,6 @@ class BaseViewSet(viewsets.ModelViewSet):
     Attributes:
         serializer_classes: Per-action serializer mapping. Falls back to serializer_class.
         querysets: Per-action queryset mapping. Falls back to queryset.
-        tenant_scoping: Whether the TenantFilterBackend should scope queries.
-            Set to False for platform-level viewsets that don't belong to a tenant.
     """
 
     search_fields: list[str] = []
@@ -25,7 +23,6 @@ class BaseViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
     permission_classes = [IsAuthenticated]
     write_permission_classes: list[type[BasePermission]] | None = None
-    tenant_scoping: bool = True
 
     serializer_classes: dict[str, type[serializers.Serializer]] = {}
     querysets: dict[str, QuerySet[Any]] = {}
