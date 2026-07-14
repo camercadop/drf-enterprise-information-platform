@@ -87,3 +87,18 @@ class ThrottlingError(APIException):
 
     def __init__(self, detail: Any = None, code: str | None = None):
         super().__init__(detail, code)
+
+
+class ConflictError(APIException):
+    """Exception raised when an operation conflicts with the current resource state.
+
+    Used for state transition guards: the requested transition has already been
+    applied or the resource is not in the expected state for the operation.
+    """
+
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "Operation conflicts with current resource state."
+    default_code = "conflict"
+
+    def __init__(self, detail: Any = None, code: str | None = None):
+        super().__init__(detail, code)

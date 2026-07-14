@@ -30,6 +30,7 @@ These codes can be returned by any endpoint.
 | `authentication_error` | 401 | Missing or invalid credentials | Re-authenticate (login or refresh) |
 | `permission_denied` | 403 | Authenticated but not authorized | User lacks required role or membership |
 | `not_found` | 404 | Resource does not exist or is soft-deleted | Verify the resource ID and tenant context |
+| `conflict` | 409 | Operation conflicts with current resource state | Check current state before retrying |
 | `throttling_error` | 429 | Rate limit exceeded | Retry after backoff |
 | `server_error` | 500 | Unexpected server failure | Retry; report if persistent |
 

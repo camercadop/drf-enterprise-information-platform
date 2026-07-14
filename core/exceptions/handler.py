@@ -45,4 +45,7 @@ def _extract_code(exc: Exception) -> str:
                     return str(v[0])
         return str(exc.default_code)
 
-    return str(exc.detail.code)  # type: ignore[union-attr]
+    if hasattr(exc.detail, "code"):
+        return str(exc.detail.code)
+
+    return str(getattr(exc, "code", exc.default_code))

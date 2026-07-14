@@ -46,6 +46,8 @@ filterwarnings = [
 target-version = "py314"
 line-length = 88
 exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings

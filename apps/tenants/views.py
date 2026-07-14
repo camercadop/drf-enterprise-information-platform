@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from apps.tenants.utils import get_tenant_id
 from apps.users.models import TenantMembership
 from core.base.views import BaseViewSet
-from core.exceptions.api import PermissionDeniedError
+from core.exceptions.api import ConflictError, PermissionDeniedError
 from core.permissions.base import IsSuperUser, IsTenantAdmin
 
 from .models import Team, Tenant
@@ -71,16 +71,28 @@ class MembershipViewSet(BaseViewSet):
 
     @action(detail=True, methods=["post"])
     def deactivate(self, request: Request, pk: str | None = None) -> Response:
-        """Deactivate a membership (soft remove)."""
+        """Deactivate a membership (soft remove).
+
+        Validates that the membership is currently active before applying
+        the transition. Returns 409 if already deactivated.
+        """
         membership = self.get_object()
+        if not membership.is_active:
+            raise ConflictError("Membership is already deactivated.")
         membership.is_active = False
         membership.save(update_fields=["is_active"])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"])
     def activate(self, request: Request, pk: str | None = None) -> Response:
-        """Re-activate a previously deactivated membership."""
+        """Re-activate a previously deactivated membership.
+
+        Validates that the membership is currently inactive before applying
+        the transition. Returns 409 if already active.
+        """
         membership = self.get_object()
+        if membership.is_active:
+            raise ConflictError("Membership is already active.")
         membership.is_active = True
         membership.save(update_fields=["is_active"])
         return Response(status=status.HTTP_204_NO_CONTENT)
