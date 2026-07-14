@@ -45,7 +45,7 @@ filterwarnings = [
 [tool.ruff]
 target-version = "py314"
 line-length = 88
-exclude = ["*/migrations/*"]
+exclude = ["*/migrations/*", "*/tests/*"]
 
 [tool.ruff.lint]
 select = [
