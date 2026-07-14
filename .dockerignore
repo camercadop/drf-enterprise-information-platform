@@ -27,3 +27,18 @@ build
 docker-compose.yml
 docker/apps/Dockerfile
 docker/config/init-db.sql
+
+# === Testing and Documentation ===
+tests
+docs
+*.md
+
+# === AI/IDE Configuration ===
+.ai-devrules
+.amazonq
+
+# === Quality Tools ===
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage

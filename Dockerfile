@@ -1,19 +1,34 @@
-# Use slim Python image for smaller footprint and faster builds
+# --- Stage 1: Builder ---
+FROM python:3.14-slim AS builder
+
+WORKDIR /app
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --no-dev --frozen
+
+COPY . .
+
+RUN uv run python manage.py collectstatic --noinput
+
+# --- Stage 2: Runtime ---
 FROM python:3.14-slim
 
 WORKDIR /app
 
-# Copy dependency files first for better Docker layer caching
-# This ensures pip install only runs when dependencies change, not on every code change
-COPY pyproject.toml uv.lock ./
+RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
 
-# Install dependencies in development mode with no cache to reduce image size
-# Using --no-cache-dir prevents storing pip cache in the image
-RUN pip install --no-cache-dir -e .
+COPY --from=builder /app /app
 
-# Copy entire application code
-COPY . .
+RUN chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "config.wsgi:application"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live/')" || exit 1
+
+CMD [".venv/bin/gunicorn", "--bind", "0.0.0.0:8000", "--log-level", "info", "--limit-request-line", "4094", "config.wsgi:application"]
