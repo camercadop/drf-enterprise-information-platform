@@ -6,6 +6,7 @@ from rest_framework.exceptions import NotFound
 from core.exceptions.api import (
     APIException,
     AuthenticationError,
+    ConflictError,
     NotFoundError,
     PermissionDeniedError,
     ThrottlingError,
@@ -40,6 +41,15 @@ class TestCustomExceptions:
     def test_throttling_error(self) -> None:
         exc = ThrottlingError()
         assert exc.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+
+    def test_conflict_error(self) -> None:
+        exc = ConflictError()
+        assert exc.status_code == status.HTTP_409_CONFLICT
+        assert exc.code == "conflict"
+
+    def test_conflict_error_custom_detail(self) -> None:
+        exc = ConflictError(detail="Already active.")
+        assert exc.detail == "Already active."
 
     def test_base_api_exception(self) -> None:
         exc = APIException()
@@ -76,3 +86,8 @@ class TestExtractCode:
         exc = NotFound(["first", "second"])
         code = _extract_code(exc)
         assert isinstance(code, str)
+
+    def test_plain_string_detail_falls_back_to_code_attr(self) -> None:
+        exc = ConflictError("Already done.")
+        code = _extract_code(exc)
+        assert code == "conflict"
