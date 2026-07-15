@@ -26,6 +26,7 @@ How to run the platform in production — environment configuration, infrastruct
 | `DB_CONNECT_TIMEOUT` | Database connection timeout (seconds) | `5` |
 | `REDIS_CONNECT_TIMEOUT` | Redis connection timeout (seconds) | `3` |
 | `REDIS_SOCKET_TIMEOUT` | Redis per-operation timeout (seconds) | `3` |
+| `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | `INFO` |
 
 ---
 
