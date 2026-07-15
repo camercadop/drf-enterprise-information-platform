@@ -3,9 +3,9 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from apps.iam_roles.models import TenantRole
 from apps.sys_permissions.catalog import get_default_role_permissions
 from apps.tenants.models import Tenant
-from apps.users.models import TenantRole
 
 
 @receiver(post_save, sender=Tenant)

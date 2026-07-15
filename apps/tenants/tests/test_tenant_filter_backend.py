@@ -6,7 +6,7 @@ import pytest
 
 from apps.tenants.filters import TenantFilterBackend
 from apps.tenants.models import Team, Tenant
-from apps.users.models import TenantMembership
+from apps.iam_users.models import TenantMembership
 from tests.factories.tenants import (
     TenantFactory,
     TenantMembershipFactory,

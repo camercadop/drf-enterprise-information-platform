@@ -44,7 +44,7 @@ This platform solves these problems once — so domain teams can focus on busine
 ## Project Structure
 
 ```
-apps/           # Domain modules (authentication, tenants, users)
+apps/           # Domain modules (iam_auth, iam_roles, iam_users, tenants)
 core/           # Framework foundations (base classes, utils, shared infrastructure)
 config/         # Django settings, URLs, ASGI/WSGI
 docs/           # Documentation

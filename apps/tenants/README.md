@@ -46,7 +46,7 @@ erDiagram
     User ||--o{ TenantMembership : "belongs to"
 ```
 
-`TenantRole` and `TenantMembership` are defined in `apps.users.models` but scoped to a tenant.
+`TenantRole` is defined in `apps.iam_roles.models` and `TenantMembership` in `apps.iam_users.models`, both scoped to a tenant.
 
 ## API Endpoints
 

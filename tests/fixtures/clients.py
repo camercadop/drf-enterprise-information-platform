@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
-from apps.users.models import TenantMembership, User
+from apps.iam_users.models import TenantMembership, User
 
 
 def _build_auth_client(user: User, membership: TenantMembership) -> APIClient:

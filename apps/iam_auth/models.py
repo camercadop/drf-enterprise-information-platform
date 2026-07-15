@@ -25,7 +25,7 @@ class UserPasswordHistory(models.Model):
     # Timestamp when this password was set
 
     class Meta:
-        db_table = "auth_password_history"
+        db_table = "iam_auth_password_history"
         ordering = ["-created_at"]
         verbose_name_plural = "user password histories"
 

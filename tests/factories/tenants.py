@@ -1,7 +1,8 @@
 import factory
 
+from apps.iam_roles.models import TenantRole
+from apps.iam_users.models import TenantMembership
 from apps.tenants.models import Tenant
-from apps.users.models import TenantMembership, TenantRole
 
 from .users import UserFactory
 

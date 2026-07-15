@@ -298,7 +298,7 @@ Use `ForeignKeyField` instead of `PrimaryKeyRelatedField` for tenant-scoped look
 
 ```python
 from core.fields import ForeignKeyField
-from apps.users.models import TenantRole, User
+from apps.iam_roles.models import TenantRole, User
 
 
 class MembershipCreateSerializer(serializers.Serializer):
@@ -440,7 +440,7 @@ Flatten related data for read operations using `source`:
 ```python
 from rest_framework import serializers
 
-from apps.users.models import TenantMembership
+from apps.iam_users.models import TenantMembership
 
 
 class MembershipListSerializer(serializers.ModelSerializer):

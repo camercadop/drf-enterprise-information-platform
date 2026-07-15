@@ -126,7 +126,7 @@ Override `_setup_base` to use `api_client` instead of `auth_client`:
 import pytest
 from rest_framework.test import APIClient
 
-from apps.users.models import TenantMembership, User
+from apps.iam_users.models import TenantMembership, User
 from tests.base import BaseActionAPITest
 
 

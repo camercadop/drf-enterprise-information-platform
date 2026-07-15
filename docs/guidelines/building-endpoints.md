@@ -197,7 +197,7 @@ urlpatterns = router.urls
 ### APIViews (manual paths)
 
 ```python
-# apps/authentication/urls.py
+# apps/iam_auth/urls.py
 from django.urls import path
 from . import views
 
@@ -215,7 +215,7 @@ urlpatterns = [
 # config/urls.py
 urlpatterns = [
     path("api/invoices/", include("apps.invoices.urls")),
-    path("api/auth/", include("apps.authentication.urls")),
+    path("api/auth/", include("apps.iam_auth.urls")),
 ]
 ```
 

@@ -8,7 +8,7 @@ from rest_framework_simplejwt.serializers import (
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.users.models import TenantMembership
+from apps.iam_users.models import TenantMembership
 from core.utils.security import validate_password_complexity
 
 from .models import PASSWORD_HISTORY_LIMIT, UserPasswordHistory

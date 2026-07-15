@@ -27,11 +27,12 @@ INSTALLED_APPS = [
     "apps.sys_health",
     "apps.sys_permissions",
     "apps.tenants",
-    "apps.users",
-    "apps.authentication",
+    "apps.iam_roles",
+    "apps.iam_users",
+    "apps.iam_auth",
 ]
 
-AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = "iam_users.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

@@ -1,3 +1,5 @@
+"""Platform-level user identity, profiles, and tenant membership."""
+
 from __future__ import annotations
 
 import uuid
@@ -61,7 +63,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS: list[str] = []
 
     class Meta:
-        db_table = "users"
+        db_table = "iam_users"
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
@@ -79,57 +81,11 @@ class UserProfile(models.Model):
     # Flexible key-value store for personal details (phone, avatar, bio, etc.)
 
     class Meta:
-        db_table = "users_profiles"
+        db_table = "iam_users_profiles"
         ordering = ["-user__created_at"]
 
     def __str__(self) -> str:
         return f"Profile({self.user.email})"
-
-
-class TenantRole(models.Model):
-    class Kind(models.TextChoices):
-        OWNER = "owner"
-        ADMIN = "admin"
-        MEMBER = "member"
-        VIEWER = "viewer"
-        CUSTOM = "custom"
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # Unique identifier for the role
-
-    name = models.CharField(max_length=50)
-    # Display name of the role (e.g. Owner, Admin, Member, Viewer)
-
-    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.CUSTOM)
-    # Internal semantic type — determines business rule enforcement
-
-    description = models.TextField(blank=True)
-    # Optional explanation of what this role grants
-
-    tenant = models.ForeignKey(
-        "tenants.Tenant", on_delete=models.CASCADE, related_name="roles"
-    )
-    # The tenant this role belongs to
-
-    permissions = models.JSONField(default=dict)
-    # Dict mapping permission codenames to grant values
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    # Timestamp when the role was created
-
-    objects = TenantManager()
-
-    class Meta:
-        db_table = "users_roles"
-        ordering = ["name"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["tenant", "name"], name="unique_role_per_tenant"
-            ),
-        ]
-
-    def __str__(self) -> str:
-        return f"{self.name} ({self.tenant})"
 
 
 class TenantMembership(models.Model):
@@ -145,7 +101,7 @@ class TenantMembership(models.Model):
     # The tenant the user belongs to
 
     role = models.ForeignKey(
-        TenantRole, on_delete=models.PROTECT, related_name="memberships"
+        "iam_roles.TenantRole", on_delete=models.PROTECT, related_name="memberships"
     )
     # The user's role within this tenant
 
@@ -161,7 +117,7 @@ class TenantMembership(models.Model):
     objects = TenantManager()
 
     class Meta:
-        db_table = "users_memberships"
+        db_table = "iam_users_memberships"
         ordering = ["-joined_at"]
         constraints = [
             models.UniqueConstraint(

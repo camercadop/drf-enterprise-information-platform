@@ -1,6 +1,6 @@
 from rest_framework import status
 
-from apps.authentication.models import UserPasswordHistory
+from apps.iam_auth.models import UserPasswordHistory
 from tests.base import BaseActionAPITest
 
 

@@ -142,5 +142,5 @@ class TestHasTenantPermission:
         assert cls_a.__name__ != cls_b.__name__
 
     def test_permission_message_includes_codename(self) -> None:
-        perm = HasTenantPermission("users.members.invite")()
-        assert "users.members.invite" in perm.message
+        perm = HasTenantPermission("iam_users.members.invite")()
+        assert "iam_users.members.invite" in perm.message

@@ -7,8 +7,8 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.iam_users.models import TenantMembership
 from apps.tenants.utils import get_tenant_id
-from apps.users.models import TenantMembership
 from core.base.views import BaseViewSet
 from core.exceptions.api import ConflictError, PermissionDeniedError
 from core.permissions.base import IsSuperUser, IsTenantAdmin

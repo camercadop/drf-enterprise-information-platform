@@ -40,6 +40,9 @@ Provides base classes that all domain modules inherit from. This layer defines:
 
 Each module is a self-contained Django app with its own models, serializers, views, and URLs. Modules communicate through well-defined interfaces (not direct imports between apps).
 
+Domain apps use namespace prefixes to group related concerns:
+- `iam_` — Identity & Access Management (users, authentication, roles)
+
 ### apps/ — System Modules (sys_ prefix)
 
 Infrastructure apps that provide cross-cutting system-level concerns. Distinguished from domain modules by the `sys_` prefix.

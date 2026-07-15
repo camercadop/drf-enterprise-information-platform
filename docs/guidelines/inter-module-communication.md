@@ -10,8 +10,8 @@ Each app in `apps/` is a self-contained domain module. Modules must communicate 
 
 ```mermaid
 flowchart LR
-    A[apps/authentication] --> B[apps/tenants]
-    A --> C[apps/users]
+    A[apps/iam_auth] --> B[apps/tenants]
+    A --> C[apps/iam_users]
     D[apps/future_module] --> B
     D --> C
     B -.->|NEVER| A
@@ -28,10 +28,10 @@ Arrows represent allowed dependency direction. Dotted lines represent forbidden 
 
 1. `core/` depends on nothing (foundation layer)
 2. Any app can depend on `core/`
-3. Any app can depend on `apps/tenants` and `apps/users` (shared domain models)
-4. `apps/tenants` and `apps/users` must not depend on downstream apps
-5. `apps/authentication` can depend on `apps/tenants` and `apps/users` (it orchestrates login)
-6. No app may depend on `apps/authentication` (auth is a leaf consumer, not a provider)
+3. Any app can depend on `apps/tenants`, `apps/iam_users`, and `apps/iam_roles` (shared domain models)
+4. `apps/tenants`, `apps/iam_users`, and `apps/iam_roles` must not depend on downstream apps
+5. `apps/iam_auth` can depend on `apps/tenants` and `apps/iam_users` (it orchestrates login)
+6. No app may depend on `apps/iam_auth` (auth is a leaf consumer, not a provider)
 
 ### Dependency Matrix
 
@@ -39,9 +39,10 @@ Arrows represent allowed dependency direction. Dotted lines represent forbidden 
 |--------|---------------|
 | `core/` | Nothing |
 | `apps/tenants` | `core/` |
-| `apps/users` | `core/`, `apps/tenants` |
-| `apps/authentication` | `core/`, `apps/tenants`, `apps/users` |
-| Any new app | `core/`, `apps/tenants`, `apps/users` |
+| `apps/iam_users` | `core/`, `apps/tenants`, `apps/iam_roles` |
+| `apps/iam_roles` | `core/`, `apps/tenants` |
+| `apps/iam_auth` | `core/`, `apps/tenants`, `apps/iam_users` |
+| Any new app | `core/`, `apps/tenants`, `apps/iam_users`, `apps/iam_roles` |
 
 ---
 
@@ -54,7 +55,7 @@ When module A needs data or behavior from module B, use these patterns (in order
 Reference another module's model via UUID FK. This is the standard approach for relational data:
 
 ```python
-from apps.users.models import User
+from apps.iam_users.models import User
 
 class Document(TenantAwareModel):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="documents")
@@ -83,7 +84,7 @@ max_size = get_tenant_setting(tenant_id, "max_upload_size_mb")
 When you need to filter or join against another module's model in a queryset, import the model directly. This is acceptable for read-only access:
 
 ```python
-from apps.users.models import User
+from apps.iam_users.models import User
 
 users = User.objects.filter(is_active=True)
 ```

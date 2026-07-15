@@ -1,6 +1,6 @@
 import pytest
 
-from apps.users.models import User
+from apps.iam_users.models import User
 from tests.factories.users import UserFactory
 
 

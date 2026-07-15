@@ -23,9 +23,6 @@
           "default_roles": { "owner": 1, "admin": 1, "member": 0, "viewer": 0 }
         }
       }
-    },
-    "roles": {
-      "label": "Roles"
     }
   }
 }

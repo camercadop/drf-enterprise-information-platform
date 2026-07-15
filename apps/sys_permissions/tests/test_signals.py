@@ -3,7 +3,7 @@
 import pytest
 
 from apps.tenants.models import Tenant
-from apps.users.models import TenantRole
+from apps.iam_roles.models import TenantRole
 from tests.factories.tenants import TenantFactory
 
 

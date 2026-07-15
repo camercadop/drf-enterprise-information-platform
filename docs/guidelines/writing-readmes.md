@@ -80,7 +80,7 @@ and the organization isn't obvious from filenames alone.}
 
 ### Level 3 — App or Complex Folder
 
-For app modules (`apps/tenants/`, `apps/authentication/`) and deeper folders with 3+ files or non-obvious logic. Answers: "What does each component do, what are the endpoints, permissions, and edge cases?"
+For app modules (`apps/tenants/`, `apps/iam_auth/`) and deeper folders with 3+ files or non-obvious logic. Answers: "What does each component do, what are the endpoints, permissions, and edge cases?"
 
 ```markdown
 # {Module Name}
@@ -174,7 +174,7 @@ All Level 3 sections are optional — include only those that apply to the modul
 |--------|-------|
 | `apps/`, `core/`, `docs/` | 1 |
 | `core/permissions/`, `core/utils/`, `core/filters/`, `config/` | 2 |
-| `apps/tenants/`, `apps/authentication/`, `apps/users/` | 3 |
+| `apps/tenants/`, `apps/iam_auth/`, `apps/iam_users/` | 3 |
 | `core/base/` (many files, complex API) | 3 |
 | Any folder with 3+ files and non-obvious logic | 3 |
 | Any folder with 1-2 files and a clear API | 2 |

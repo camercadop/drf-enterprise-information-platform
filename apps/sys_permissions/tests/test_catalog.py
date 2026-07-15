@@ -296,10 +296,10 @@ class TestGetMergedCatalog:
         assert "tenants.tenants.view" in merged
         assert "tenants.tenants.update" in merged
         assert "tenants.teams.view" in merged
-        assert "users.access" in merged
-        assert "users.members.view" in merged
-        assert "users.members.invite" in merged
-        assert "users.roles.view" in merged
+        assert "iam_users.access" in merged
+        assert "iam_users.members.view" in merged
+        assert "iam_users.members.invite" in merged
+        assert "iam_roles.roles.view" in merged
 
     def test_disabled_actions_not_present(self) -> None:
         merged = get_merged_catalog()
@@ -308,9 +308,9 @@ class TestGetMergedCatalog:
 
     def test_disabled_resources_not_present(self) -> None:
         merged = get_merged_catalog()
-        # authentication app has resources: false but still has access
-        assert "authentication.authentication.view" not in merged
-        assert "authentication.access" in merged
+        # iam_auth app has resources: false but still has access
+        assert "iam_auth.iam_auth.view" not in merged
+        assert "iam_auth.access" in merged
 
 
 class TestGetDefaultRolePermissions:

@@ -1,7 +1,8 @@
 import pytest
 
+from apps.iam_roles.models import TenantRole
+from apps.iam_users.models import TenantMembership, User
 from apps.tenants.models import Tenant
-from apps.users.models import TenantMembership, TenantRole, User
 from tests.factories.tenants import (
     TenantFactory,
     TenantMembershipFactory,

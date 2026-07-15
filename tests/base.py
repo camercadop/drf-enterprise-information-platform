@@ -34,7 +34,7 @@ from typing import Any
 import pytest
 from rest_framework.test import APIClient
 
-from apps.users.models import TenantMembership, User
+from apps.iam_users.models import TenantMembership, User
 
 
 @pytest.mark.django_db

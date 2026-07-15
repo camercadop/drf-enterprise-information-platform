@@ -7,7 +7,7 @@
 uv run pytest
 
 # Run tests for a specific app
-uv run pytest apps/authentication/
+uv run pytest apps/iam_auth/
 
 # Run tests for core
 uv run pytest core/tests/
@@ -40,7 +40,7 @@ core/
     ...
 
 apps/
-  authentication/
+  iam_auth/
     tests/
       test_api_login.py
       test_api_logout.py

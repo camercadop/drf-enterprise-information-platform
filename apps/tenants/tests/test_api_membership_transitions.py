@@ -8,7 +8,8 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.users.models import TenantMembership, TenantRole
+from apps.iam_roles.models import TenantRole
+from apps.iam_users.models import TenantMembership
 from tests.factories.tenants import TenantMembershipFactory
 from tests.factories.users import UserFactory
 

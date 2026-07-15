@@ -7,9 +7,11 @@ This document describes the platform's data model organized by domain. Each sect
 ```mermaid
 erDiagram
     Tenant ||--o{ TenantSetting : "configured by"
+    Tenant ||--o{ TenantRole : "defines"
     Tenant ||--o{ TenantMembership : "has"
     User ||--o{ TenantMembership : "belongs via"
     User ||--o{ UserPasswordHistory : "tracks"
+    TenantRole ||--o{ TenantMembership : "assigned via"
 ```
 
 ---
@@ -81,7 +83,7 @@ erDiagram
 
 ---
 
-## Users
+## Users (iam_users)
 
 ```mermaid
 erDiagram
@@ -103,16 +105,6 @@ erDiagram
         JSON personal_info
     }
 
-    TenantRole {
-        UUID id PK
-        UUID tenant_id FK
-        VARCHAR name
-        VARCHAR kind
-        TEXT description
-        JSON permissions
-        DATETIME created_at
-    }
-
     TenantMembership {
         UUID id PK
         UUID user_id FK
@@ -126,30 +118,63 @@ erDiagram
     User ||--o| UserProfile : "has one"
     User ||--o{ TenantMembership : "has many"
     Tenant ||--o{ TenantMembership : "has many"
-    Tenant ||--o{ TenantRole : "has many"
     TenantRole ||--o{ TenantMembership : "assigned via"
 ```
+
+**Tables:** `iam_users`, `iam_users_profiles`, `iam_users_memberships`
 
 **Constraints:**
 
 | Model | Constraint | Fields |
 |-------|-----------|--------|
-| TenantRole | unique_role_per_tenant | (tenant, name) |
 | TenantMembership | unique_user_tenant | (user, tenant) |
 
 **Design decisions:**
 - `User` exists at the platform level — not scoped to any tenant. A user can belong to multiple tenants.
 - Tenant association is modeled through `TenantMembership`, which assigns exactly one `TenantRole` per membership.
 - `UserProfile` separates mutable personal data from the auth-critical `User` table.
-- `TenantRole` is defined per tenant — each tenant manages its own role definitions independently.
-- `TenantRole.kind` is an internal, immutable semantic type (owner, admin, member, viewer, custom). Business rules check `kind`, not `name`, so users can rename roles freely.
-- `TenantRole.permissions` stores a dict mapping codenames to grant values (e.g., `{"tenants.tenants.view": 1, "tenants.teams.create": 0}`). Codenames are defined in app-level `permissions.json` catalogs. Missing codename = denied.
 - `is_admin` on `TenantMembership` provides a fast-path check — admins bypass permission checks entirely.
+
+---
+
+## Roles (iam_roles)
+
+```mermaid
+erDiagram
+    TenantRole {
+        UUID id PK
+        UUID tenant_id FK
+        VARCHAR name
+        VARCHAR kind
+        TEXT description
+        JSON permissions
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+
+    Tenant ||--o{ TenantRole : "has many"
+```
+
+**Table:** `iam_roles`
+
+**Constraints:**
+
+| Model | Constraint | Fields |
+|-------|-----------|--------|
+| TenantRole | unique_role_per_tenant | (tenant, name) |
+
+**Design decisions:**
+- `TenantRole` inherits from `TenantAwareModel` (soft-delete, tenant-scoped manager).
+- Defined per tenant — each tenant manages its own role definitions independently.
+- `kind` is an internal, immutable semantic type (owner, admin, member, viewer, custom). Business rules check `kind`, not `name`, so users can rename roles freely.
+- `permissions` stores a dict mapping codenames to grant values (e.g., `{"tenants.tenants.view": 1, "tenants.teams.create": 0}`). Codenames are defined in app-level `permissions.json` catalogs. Missing codename = denied.
 - Default roles (Owner, Admin, Member, Viewer) are seeded automatically when a tenant is created.
 
 ---
 
-## Authentication
+## Authentication (iam_auth)
 
 ```mermaid
 erDiagram
@@ -162,6 +187,8 @@ erDiagram
 
     User ||--o{ UserPasswordHistory : "has many"
 ```
+
+**Table:** `iam_auth_password_history`
 
 **Design decisions:**
 - Stores the hashed password (never plaintext) each time a user changes their password.
