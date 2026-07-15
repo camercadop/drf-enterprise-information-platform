@@ -68,13 +68,35 @@ These endpoints use `AllowAny` and do not require authentication:
 ### Hierarchy
 
 ```
-IsSuperUser          — platform-level admin (all tenants, all operations)
-IsTenantOwner        — tenant owner (ownership flag on membership)
-IsTenantAdmin        — tenant admin (is_admin flag on membership)
-IsOwnerOrReadOnly    — object creator for writes, anyone for reads
-IsTeamMember         — member of any team
-BasePermission       — foundation class with helper methods
+IsSuperUser              — platform-level admin (all tenants, all operations)
+IsTenantAdmin            — tenant admin (is_admin flag, bypasses permission checks)
+HasTenantPermission(x)   — granular codename check against role's permissions
+IsTenantOwner            — tenant owner (ownership flag on membership)
+IsOwnerOrReadOnly        — object creator for writes, anyone for reads
+IsTeamMember             — member of any team
+BasePermission           — foundation class with helper methods
 ```
+
+### RBAC (Role-Based Access Control)
+
+Permissions are defined declaratively in `permissions.json` catalog files per app. Each permission is a `resource.action` codename (e.g., `tenants.view`, `members.invite`). Domain apps without a catalog get default CRUD permissions automatically (view, create, update, delete).
+
+`TenantRole.permissions` stores a dict mapping codenames to `0`/`1` values. Enforcement uses `HasTenantPermission`:
+
+```python
+from apps.sys_permissions.permissions import HasTenantPermission
+
+class TeamViewSet(BaseViewSet):
+    write_permission_classes = [HasTenantPermission("teams.create")]
+```
+
+Enforcement flow:
+1. Get user's membership in current tenant (from JWT `tenant_id`)
+2. If `membership.is_admin` is True, allow (bypass)
+3. Otherwise, check if `role.permissions.get(codename) == 1`
+4. Missing codename = denied (default zero)
+
+Default roles (Owner, Admin, Member, Viewer) are seeded automatically when a tenant is created, with permissions derived from the catalog's `default_roles` declarations.
 
 ### Tenant Isolation
 

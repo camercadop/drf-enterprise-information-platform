@@ -1,0 +1,14 @@
+{
+  "resources": {
+    "tenants": {
+      "label": "Tenants",
+      "actions": {
+        "create": false,
+        "delete": false
+      }
+    },
+    "teams": {
+      "label": "Teams"
+    }
+  }
+}

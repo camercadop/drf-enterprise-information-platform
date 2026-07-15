@@ -50,6 +50,9 @@ jobs:
       - name: Type check
         run: uv run mypy .
 
+      - name: Check permission catalog
+        run: uv run python manage.py check_permission_catalog
+
       - name: Migrate
         run: uv run python manage.py migrate
 

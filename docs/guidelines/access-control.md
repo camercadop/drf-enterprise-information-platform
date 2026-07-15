@@ -45,13 +45,14 @@ Understanding when each method is called is critical:
 | Class | Scope | Checks |
 |-------|-------|--------|
 | `IsSuperUser` | Platform | `request.user.is_superuser` |
+| `IsTenantAdmin` | Tenant | `is_admin=True` on membership (bypasses all permission checks) |
+| `HasTenantPermission(codename)` | Tenant | Codename in role's `permissions` list |
 | `IsTenantOwner` | Tenant | `is_owner=True` on any membership |
-| `IsTenantAdmin` | Tenant | `is_admin=True` on any membership |
 | `IsOwnerOrReadOnly` | Object | Object's `created_by` matches user (writes only) |
 | `IsTeamMember` | Tenant | User has any team membership |
 | `BasePermission` | Foundation | Helper methods for subclasses |
 
-All classes live in `core.permissions.base`.
+Base classes live in `core.permissions.base`. `HasTenantPermission` lives in `apps.sys_permissions.permissions`.
 
 ---
 
@@ -64,6 +65,255 @@ Returns `True` if `obj.<owner_field> == request.user`.
 ### check_tenant_ownership(request, obj, tenant_field="tenant")
 
 Returns `True` if the requesting user has an active membership in the object's tenant. Superusers bypass this check automatically.
+
+---
+
+## Granular Permissions (RBAC)
+
+Domain apps automatically get default CRUD permissions (view, create, update, delete) derived from their app label. Apps can customize via `permissions.json` — override, extend, or disable specific actions.
+
+`TenantRole.permissions` stores a dict mapping codenames to `0`/`1`:
+
+```json
+{"tenants.tenants.view": 1, "tenants.teams.create": 1, "tenants.teams.delete": 0}
+```
+
+- `1` = granted
+- `0` = denied
+- Missing codename = denied (default zero)
+
+For codename-based permission checks, use `HasTenantPermission`:
+
+```python
+from apps.sys_permissions.permissions import HasTenantPermission
+from core.base.views import BaseViewSet
+
+
+class TeamViewSet(BaseViewSet):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+    write_permission_classes = [HasTenantPermission("tenants.teams.create")]
+```
+
+This checks whether the user's role in the current tenant has `"tenants.teams.create"` in its `permissions` list. Users with `is_admin=True` bypass the check.
+
+For per-action granularity with different codenames:
+
+```python
+from apps.sys_permissions.permissions import HasTenantPermission
+from core.base.views import BaseViewSet
+
+
+class TeamViewSet(BaseViewSet):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [IsAuthenticated(), HasTenantPermission("tenants.teams.create")()]
+        if self.action in ("update", "partial_update"):
+            return [IsAuthenticated(), HasTenantPermission("tenants.teams.update")()]
+        if self.action == "destroy":
+            return [IsAuthenticated(), HasTenantPermission("tenants.teams.delete")()]
+        return [IsAuthenticated()]
+```
+
+---
+
+## Permission Catalog
+
+The RBAC system is config-driven. Each domain app can declare permissions in a `permissions.json` file at its root. The catalog system lives in `apps.sys_permissions`.
+
+### Access Permission
+
+Every domain app automatically gets an `app.access` permission (e.g., `tenants.access`, `users.access`). This acts as a gate: if a role does not have `app.access == 1`, all actions within that app are denied regardless of individual action permissions.
+
+- Granted to all default roles (Owner, Admin, Member, Viewer)
+- Set `"access": false` in `permissions.json` to remove it from the catalog — no role can access the app (except `is_admin`)
+- Useful for restricting entire apps to admins only
+
+### Default CRUD Permissions
+
+Domain apps (under `apps/` without `sys_` prefix) automatically get CRUD permissions derived from their app label:
+
+| Action | Readonly | Owner | Admin | Member | Viewer |
+|--------|----------|-------|-------|--------|--------|
+| `view` | Yes | 1 | 1 | 1 | 1 |
+| `create` | No | 1 | 1 | 0 | 0 |
+| `update` | No | 1 | 1 | 0 | 0 |
+| `delete` | No | 1 | 1 | 0 | 0 |
+
+The resource name is the app label (e.g., `apps.tenants` -> `tenants.tenants`). Each app also gets an `app.access` permission that gates all actions within it.
+
+### Catalog Format
+
+Each app places a `permissions.json` at its root. The catalog merges with the auto-generated defaults.
+
+**Minimal (use all defaults, add a custom resource):**
+
+```json
+{
+  "resources": {
+    "teams": {
+      "label": "Teams"
+    }
+  }
+}
+```
+
+Result: `teams` gets default CRUD (view, create, update, delete).
+
+**Disable specific actions:**
+
+```json
+{
+  "resources": {
+    "tenants": {
+      "label": "Tenants",
+      "actions": {
+        "create": false,
+        "delete": false
+      }
+    }
+  }
+}
+```
+
+Result: `tenants` has only `view` and `update`.
+
+**Disable a resource entirely:**
+
+```json
+{
+  "resources": {
+    "users": false
+  }
+}
+```
+
+Result: no permissions generated for `users` resource.
+
+**Disable all resources in an app:**
+
+```json
+{
+  "resources": false
+}
+```
+
+Result: app has no permissions at all.
+
+**Custom actions (merged with CRUD defaults):**
+
+```json
+{
+  "resources": {
+    "members": {
+      "label": "Members",
+      "actions": {
+        "create": false,
+        "update": false,
+        "delete": false,
+        "view": {
+          "label": "View members",
+          "readonly": true,
+          "default_roles": { "owner": 1, "admin": 1, "member": 1, "viewer": 1 }
+        },
+        "invite": {
+          "label": "Invite members",
+          "readonly": false,
+          "default_roles": { "owner": 1, "admin": 1, "member": 0, "viewer": 0 }
+        }
+      }
+    }
+  }
+}
+```
+
+Result: `members` has `view` and `invite` only (CRUD defaults disabled, custom action added).
+
+### Field Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `resources` | object or `false` | Top-level container. `false` disables all permissions |
+| `resources.<name>` | object or `false` | Resource definition. `false` disables the resource |
+| `resources.<name>.label` | string | Human-readable resource name (optional if using defaults) |
+| `resources.<name>.actions` | object | Action overrides/additions (optional) |
+| `actions.<name>` | object or `false` | Action definition. `false` removes the action |
+| `actions.<name>.label` | string | Human-readable action description |
+| `actions.<name>.readonly` | boolean | Whether this is a read-only action |
+| `actions.<name>.default_roles` | object | Default grant per role: `0` = denied, `1` = granted |
+
+### Codename Convention
+
+Codenames are derived as `app.resource.action`:
+
+- `tenants.tenants.view`
+- `tenants.tenants.update`
+- `users.members.invite`
+- `tenants.teams.create`
+
+Codenames must be unique across all apps.
+
+### Validation Rules
+
+| Rule | Enforced By |
+|------|-------------|
+| Valid JSON structure matching schema | JSON Schema (`permissions_schema.json`) |
+| Resource names are snake_case | JSON Schema pattern |
+| Action names are snake_case | JSON Schema pattern |
+| All required fields present (`label`, `readonly`, `default_roles`) | JSON Schema |
+| `default_roles` contains exactly `owner`, `admin`, `member`, `viewer` | JSON Schema |
+| `default_roles` values are `0` or `1` only | JSON Schema |
+| Viewer roles cannot have `1` on `readonly: false` permissions | Business rule in `catalog.py` |
+| Codenames are unique across all apps | Uniqueness check in `catalog.py` |
+
+### Enforcement Flow
+
+```mermaid
+flowchart TD
+    A[Request arrives] --> B{User authenticated?}
+    B -->|No| C[401 Unauthorized]
+    B -->|Yes| D{Tenant context in JWT?}
+    D -->|No| E[403 Forbidden]
+    D -->|Yes| F{Active membership in tenant?}
+    F -->|No| E
+    F -->|Yes| G{membership.is_admin?}
+    G -->|Yes| H[Allow]
+    G -->|No| I{app.access == 1?}
+    I -->|No| E
+    I -->|Yes| J{app.resource.action == 1?}
+    J -->|Yes| H
+    J -->|No| E
+```
+
+### Default Role Seeding
+
+When a new `Tenant` is created, a `post_save` signal in `apps/tenants/signals.py` automatically creates four roles:
+
+| Role | Permissions |
+|------|-------------|
+| Owner | All permissions granted (`codename: 1` for all) |
+| Admin | All permissions granted (`codename: 1` for all) |
+| Member | Read + limited write (only where `member: 1` in catalog) |
+| Viewer | Read-only permissions only (only where `viewer: 1` and `readonly: true`) |
+
+Tenants can later customize role permissions by modifying `TenantRole.permissions`.
+
+### Adding Permissions to a New App
+
+1. (Optional) Create `apps/<app_name>/permissions.json` to customize — without it, default CRUD applies
+2. Run `uv run python manage.py check_permission_catalog` to validate
+3. Reference codenames in views via `HasTenantPermission`
+
+### CI Validation
+
+```bash
+uv run python manage.py check_permission_catalog
+```
+
+Exits with code `1` on failure. Runs in CI alongside `ruff` and `mypy`.
 
 ---
 

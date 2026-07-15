@@ -107,7 +107,9 @@ erDiagram
         UUID id PK
         UUID tenant_id FK
         VARCHAR name
+        VARCHAR kind
         TEXT description
+        JSON permissions
         DATETIME created_at
     }
 
@@ -140,7 +142,10 @@ erDiagram
 - Tenant association is modeled through `TenantMembership`, which assigns exactly one `TenantRole` per membership.
 - `UserProfile` separates mutable personal data from the auth-critical `User` table.
 - `TenantRole` is defined per tenant — each tenant manages its own role definitions independently.
-- `is_admin` on `TenantMembership` provides a fast-path check without querying the role's permissions.
+- `TenantRole.kind` is an internal, immutable semantic type (owner, admin, member, viewer, custom). Business rules check `kind`, not `name`, so users can rename roles freely.
+- `TenantRole.permissions` stores a dict mapping codenames to grant values (e.g., `{"tenants.tenants.view": 1, "tenants.teams.create": 0}`). Codenames are defined in app-level `permissions.json` catalogs. Missing codename = denied.
+- `is_admin` on `TenantMembership` provides a fast-path check — admins bypass permission checks entirely.
+- Default roles (Owner, Admin, Member, Viewer) are seeded automatically when a tenant is created.
 
 ---
 

@@ -18,8 +18,10 @@ class TenantFactory(factory.django.DjangoModelFactory):
 class TenantRoleFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TenantRole
+        django_get_or_create = ("tenant", "name")
 
     name = "Member"
+    kind = "member"
     tenant = factory.SubFactory(TenantFactory)
 
 

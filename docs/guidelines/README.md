@@ -17,6 +17,7 @@ Sorted by importance to the project — core architectural concerns first, then 
 | [Soft-Delete](soft-delete.md) | Deletion strategy, filter backend, serializer mixin |
 | [Inter-Module Communication](inter-module-communication.md) | Dependency direction, allowed interfaces, forbidden patterns |
 | [Writing Tests](writing-tests.md) | Base classes, factories, fixtures, and test patterns |
+| [Management Commands](management-commands.md) | BaseCommand, naming, output (Rich), logging, CI integration |
 | [Creating a New App](creating-a-new-app.md) | Step-by-step checklist for adding a domain module |
 | [Writing READMEs](writing-readmes.md) | Folder-level documentation levels, structure, and rules |
 | [Guideline Standard](guideline-standard.md) | How to write a guideline for this folder |

@@ -87,11 +87,21 @@ class UserProfile(models.Model):
 
 
 class TenantRole(models.Model):
+    class Kind(models.TextChoices):
+        OWNER = "owner"
+        ADMIN = "admin"
+        MEMBER = "member"
+        VIEWER = "viewer"
+        CUSTOM = "custom"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # Unique identifier for the role
 
     name = models.CharField(max_length=50)
     # Display name of the role (e.g. Owner, Admin, Member, Viewer)
+
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.CUSTOM)
+    # Internal semantic type — determines business rule enforcement
 
     description = models.TextField(blank=True)
     # Optional explanation of what this role grants
@@ -100,6 +110,9 @@ class TenantRole(models.Model):
         "tenants.Tenant", on_delete=models.CASCADE, related_name="roles"
     )
     # The tenant this role belongs to
+
+    permissions = models.JSONField(default=dict)
+    # Dict mapping permission codenames to grant values
 
     created_at = models.DateTimeField(auto_now_add=True)
     # Timestamp when the role was created

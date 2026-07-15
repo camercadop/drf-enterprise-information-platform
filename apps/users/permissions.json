@@ -1,0 +1,31 @@
+{
+  "resources": {
+    "users": false,
+    "members": {
+      "label": "Members",
+      "actions": {
+        "create": false,
+        "update": false,
+        "delete": false,
+        "view": {
+          "label": "View members",
+          "readonly": true,
+          "default_roles": { "owner": 1, "admin": 1, "member": 1, "viewer": 1 }
+        },
+        "invite": {
+          "label": "Invite members",
+          "readonly": false,
+          "default_roles": { "owner": 1, "admin": 1, "member": 0, "viewer": 0 }
+        },
+        "remove": {
+          "label": "Remove members",
+          "readonly": false,
+          "default_roles": { "owner": 1, "admin": 1, "member": 0, "viewer": 0 }
+        }
+      }
+    },
+    "roles": {
+      "label": "Roles"
+    }
+  }
+}

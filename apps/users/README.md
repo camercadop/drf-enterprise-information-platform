@@ -50,7 +50,9 @@ Tenant-specific role definitions.
 | id | UUID | Primary key |
 | tenant_id | FK → Tenant | Owning tenant |
 | name | VARCHAR | Role name (e.g., Owner, Admin, Member) |
+| kind | VARCHAR | Internal semantic type (owner, admin, member, viewer, custom) |
 | description | TEXT | What this role grants |
+| permissions | JSON | Dict mapping permission codenames to grant values |
 | created_at | DATETIME | Auto-set on creation |
 
 ### TenantMembership
@@ -94,3 +96,4 @@ Although the platform default is soft-delete via `deleted_at`/`deleted_by`, this
 - `is_admin` on membership avoids querying role permissions for the most common privilege check.
 - `UserProfile` separates mutable personal data from the auth table to reduce migration churn.
 - Deleting a `TenantRole` that has active memberships is blocked (`PROTECT`) to prevent orphaned references.
+- `kind` is an internal, immutable field that identifies the role's semantic type regardless of display name. Business rules (e.g., viewer can't have write permissions) check `kind`, not `name`.
