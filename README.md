@@ -131,6 +131,8 @@ GitHub Actions runs lint, type check, and tests on every push to `main` and PR t
 - [Deployment](docs/deployment.md)
 - [Testing](docs/testing.md)
 - [Continuous Integration](docs/ci.md)
+- [Architecture Decision Records](docs/adr/README.md)
+- [Development Guidelines](docs/guidelines/README.md)
 
 ## License
 
