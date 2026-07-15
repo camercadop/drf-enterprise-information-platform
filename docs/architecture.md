@@ -111,4 +111,4 @@ Implemented via:
 | Containers | Docker + Docker Compose |
 | Quality | Ruff, mypy, pre-commit |
 | Testing | Pytest, Factory Boy |
-| Docs | OpenAPI / Swagger |
+| Docs | OpenAPI / Swagger (drf-spectacular) |

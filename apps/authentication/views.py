@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -13,6 +14,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .serializers import (
     LoginSerializer,
     LogoutSerializer,
+    PasswordChangeResponseSerializer,
     PasswordChangeSerializer,
     RefreshSerializer,
 )
@@ -37,6 +39,7 @@ class LogoutView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=LogoutSerializer, responses={204: None})
     def post(self, request: Request) -> Response:
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -49,6 +52,7 @@ class LogoutAllView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses={204: None})
     def post(self, request: Request) -> Response:
         tokens = OutstandingToken.objects.filter(user=request.user).exclude(
             blacklistedtoken__isnull=False
@@ -63,6 +67,10 @@ class PasswordChangeView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=PasswordChangeSerializer,
+        responses={200: PasswordChangeResponseSerializer},
+    )
     def post(self, request: Request) -> Response:
         serializer = PasswordChangeSerializer(
             data=request.data, context={"request": request}

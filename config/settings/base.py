@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "apps.sys_audit",
     "apps.sys_health",
     "apps.sys_permissions",
@@ -123,6 +124,15 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "core.exceptions.handler.exception_handler",
     "DEFAULT_PAGINATION_CLASS": "core.pagination.page.CustomPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_SCHEMA_CLASS": "core.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "DRF Enterprise Information Platform",
+    "DESCRIPTION": "Multi-tenant enterprise platform API.",
+    "VERSION": "0.1.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": "/api/",
 }
 
 SERIALIZER_PLUGINS: list[str] = [

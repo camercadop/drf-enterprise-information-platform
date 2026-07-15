@@ -155,3 +155,9 @@ class PasswordChangeSerializer(serializers.Serializer):  # type: ignore[type-arg
         UserPasswordHistory.objects.create(user=user, hashed_password=user.password)
         user.set_password(self.validated_data["new_password"])
         user.save(update_fields=["password"])
+
+
+class PasswordChangeResponseSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Response schema for password change (new access token)."""
+
+    access = serializers.CharField()

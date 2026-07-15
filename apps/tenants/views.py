@@ -1,6 +1,7 @@
 from typing import Any
 
 from django.db.models import QuerySet
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -65,10 +66,14 @@ class MembershipViewSet(BaseViewSet):
         if self.action == "create":
             tenant_id = get_tenant_id(self.request)
             if not tenant_id:
+                # During schema introspection there is no real request
+                if getattr(self, "swagger_fake_view", False):
+                    return context
                 raise PermissionDeniedError("No tenant context in token.")
             context["tenant_id"] = tenant_id
         return context
 
+    @extend_schema(request=None, responses={204: None})
     @action(detail=True, methods=["post"])
     def deactivate(self, request: Request, pk: str | None = None) -> Response:
         """Deactivate a membership (soft remove).
@@ -83,6 +88,7 @@ class MembershipViewSet(BaseViewSet):
         membership.save(update_fields=["is_active"])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(request=None, responses={204: None})
     @action(detail=True, methods=["post"])
     def activate(self, request: Request, pk: str | None = None) -> Response:
         """Re-activate a previously deactivated membership.

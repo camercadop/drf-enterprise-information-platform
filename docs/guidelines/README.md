@@ -12,6 +12,7 @@ Sorted by importance to the project — core architectural concerns first, then 
 | [Access Control](access-control.md) | Permission classes, tenant isolation, declarative write perms |
 | [Building Endpoints](building-endpoints.md) | Base classes, lifecycle hooks, pagination, response envelope, URL registration |
 | [Building Serializers](building-serializers.md) | Base classes, lifecycle hooks, plugins, ForeignKeyField, output transformation |
+| [API Documentation](api-documentation.md) | Annotating endpoints for OpenAPI schema generation (drf-spectacular) |
 | [Input Validation](input-validation.md) | Field, serializer, and model-level validation |
 | [Error Handling](error-handling.md) | Exception hierarchy, error codes, response envelope |
 | [Soft-Delete](soft-delete.md) | Deletion strategy, filter backend, serializer mixin |

@@ -18,6 +18,20 @@ class CustomPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
+    def get_paginated_response_schema(self, schema: dict[str, Any]) -> dict[str, Any]:
+        """OpenAPI schema matching the custom paginated response shape."""
+        return {
+            "type": "object",
+            "required": ["count", "page_size", "current_page", "total_pages", "results"],
+            "properties": {
+                "count": {"type": "integer"},
+                "page_size": {"type": "integer"},
+                "current_page": {"type": "integer"},
+                "total_pages": {"type": "integer"},
+                "results": schema,
+            },
+        }
+
     def get_paginated_response(self, data: list[Any]) -> Response:
         return Response(
             {

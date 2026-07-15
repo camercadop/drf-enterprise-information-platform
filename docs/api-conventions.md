@@ -18,6 +18,18 @@ No version prefix is used currently. If versioning is introduced, it will follow
 
 ---
 
+## API Documentation
+
+Interactive documentation is auto-generated from the codebase via `drf-spectacular`. All documentation endpoints require authentication.
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/schema/` | Raw OpenAPI 3.0 schema (JSON/YAML) |
+| `GET /api/schema/swagger-ui/` | Swagger UI (interactive) |
+| `GET /api/schema/redoc/` | ReDoc (read-optimized) |
+
+---
+
 ## URL Structure
 
 | Convention | Example |

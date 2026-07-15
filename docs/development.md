@@ -75,6 +75,10 @@ uv run pre-commit run --all-files
 
 See [Code Style](code-style.md) for all formatting, naming, and structural conventions.
 
+## API Documentation
+
+Interactive API docs are available at `/api/schema/swagger-ui/` (requires authentication). The raw OpenAPI schema is served at `/api/schema/`.
+
 
 ## Docker
 
