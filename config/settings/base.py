@@ -82,7 +82,11 @@ CACHES = {
             "socket_connect_timeout": env.int("REDIS_CONNECT_TIMEOUT", default=3),
             "socket_timeout": env.int("REDIS_SOCKET_TIMEOUT", default=3),
         },
-    }
+    },
+    "schema": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": BASE_DIR / ".cache" / "schema",
+    },
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -133,6 +137,8 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": "/api/",
+    "SCHEMA_CACHING": True,
+    "SCHEMA_CACHE_BACKEND": "schema",
 }
 
 SERIALIZER_PLUGINS: list[str] = [
