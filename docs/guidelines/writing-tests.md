@@ -287,6 +287,43 @@ def invalid_payloads(self):
 
 ---
 
+## Asserting 400 Responses in Standalone Tests
+
+When writing `@pytest.mark.django_db` tests outside `BaseCRUDAPITest`, always assert beyond the status code. A bare `assert response.status_code == 400` passes for any validation failure — including ones caused by unrelated bugs.
+
+Two levels of precision, in order of preference:
+
+**1. Assert the error code (preferred)**
+
+DRF wraps validation errors in `ErrorDetail` objects that carry a `code`. Asserting the code is stable — it won't break if the human-readable message is reworded.
+
+```python
+# Non-field errors land in GLOBAL_ERRORS
+assert response.data["data"]["GLOBAL_ERRORS"][0].code == "already_exists"
+
+# Field errors land under the field name
+assert response.data["data"]["kind"][0].code == "invalid"
+```
+
+Error codes are defined at the validator or serializer level (e.g., `UniqueTogetherContextValidator(code="already_exists")`).
+
+**2. Assert field presence (minimum bar)**
+
+When no explicit code is set, at least assert which field caused the error:
+
+```python
+assert "permissions" in response.data["data"]
+```
+
+**Where errors land**
+
+| Error type | Location in `response.data["data"]` |
+|------------|-------------------------------------|
+| Field-level | `response.data["data"]["<field_name>"]` |
+| Non-field (raised without a field key) | `response.data["data"]["GLOBAL_ERRORS"]` |
+
+---
+
 ## Common Pitfalls
 
 | Mistake | Consequence | Fix |
