@@ -14,7 +14,8 @@ How the code should look — formatting, structure, naming, and structural conve
 
 - Files: lowercase with underscores (`base_serializer.py`)
 - Classes: PascalCase (`BaseSerializer`)
-- Plugins: PascalCase ending in `Plugin` (`SoftDeletablePlugin`)
+- Serializer plugins: PascalCase ending in `SerializerPlugin` (`AuditSerializerPlugin`)
+- ViewSet plugins: PascalCase ending in `ViewSetPlugin` (`TenantContextViewSetPlugin`)
 - Template hooks: `pre_*`, `do_*`, `post_*`
 - Plugin hooks: `on_pre_*`, `on_post_*`, `on_*`
 

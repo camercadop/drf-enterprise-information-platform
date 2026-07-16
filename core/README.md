@@ -100,11 +100,8 @@ Pagination strategies and page metadata.
 
 Permission classes for access control.
 
-- `BasePermission` — ownership and tenant ownership checks
+- `BasePermission` — ownership checks and logging helpers
 - `IsOwnerOrReadOnly` — write access restricted to object owner
-- `IsTenantOwner` — access restricted to tenant owners
-- `IsTenantAdmin` — access restricted to tenant admins
-- `IsTeamMember` — access restricted to team members
 - `IsSuperUser` — access restricted to platform superusers
 
 ### utils/

@@ -183,7 +183,7 @@ By inheriting from the platform base classes, these behaviors activate automatic
 - Standard response envelope (see [Building Endpoints](building-endpoints.md#response-envelope))
 - Pagination (see [Building Endpoints](building-endpoints.md#pagination))
 - Search and ordering filters (see [Building Endpoints](building-endpoints.md))
-- Plugin lifecycle execution (see [Building Serializers](building-serializers.md#plugins))
+- Plugin lifecycle execution (see [Building Serializers](building-serializers.md#plugins)) — configured via `REST_FRAMEWORK["DEFAULT_SERIALIZER_PLUGINS"]` and `REST_FRAMEWORK["DEFAULT_VIEWSET_PLUGINS"]`
 
 ---
 

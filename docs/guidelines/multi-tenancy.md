@@ -248,7 +248,6 @@ The plugin checks `hasattr(model, "tenant_id")` and no-ops for models without a 
 ## Superuser Bypass
 
 - `TenantFilterBackend`: bypassed when `tenant_scoping = False` (set explicitly or via property)
-- `BasePermission.check_tenant_ownership`: superusers skip tenant membership checks
 - `TenantInjectionSerializerPlugin`: still requires a tenant context — superusers must select a tenant when creating tenant-scoped resources
 
 ---

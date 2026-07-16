@@ -22,7 +22,7 @@ def log_audit(
     """Record an audit entry for a state-changing operation.
 
     This is the single entry point for writing audit records. Used by
-    the AuditPlugin and available for direct use in background tasks,
+    the AuditSerializerPlugin and available for direct use in background tasks,
     management commands, or any context with a declared actor.
 
     Args:

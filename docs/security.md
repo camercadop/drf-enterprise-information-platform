@@ -7,7 +7,7 @@ Security model, authentication flows, and access control for the platform.
 ## Principles
 
 - **Authenticated by default** — all endpoints require authentication unless explicitly opted out (`AllowAny`)
-- **Tenant isolation at the permission layer** — every tenant-scoped resource is checked via `check_tenant_ownership`
+- **Tenant isolation at the permission layer** — every tenant-scoped resource is filtered by tenant context from JWT
 - **Short-lived tokens** — minimize exposure window for stolen credentials
 - **Defense in depth** — multiple independent enforcement layers per ADR-004
 
@@ -71,9 +71,7 @@ These endpoints use `AllowAny` and do not require authentication:
 IsSuperUser              — platform-level admin (all tenants, all operations)
 IsTenantAdmin            — tenant admin (is_admin flag, bypasses permission checks)
 HasTenantPermission(x)   — granular codename check against role's permissions
-IsTenantOwner            — tenant owner (ownership flag on membership)
 IsOwnerOrReadOnly        — object creator for writes, anyone for reads
-IsTeamMember             — member of any team
 BasePermission           — foundation class with helper methods
 ```
 
@@ -107,11 +105,7 @@ Enforced by two independent layers (ADR-004 defense in depth):
 
 Both layers must fail simultaneously for data to leak across tenants.
 
-Additionally, `BasePermission.check_tenant_ownership(request, obj)`:
 
-1. Extracts the object's `tenant` FK
-2. Checks if the requesting user has an active membership in that tenant
-3. Superusers bypass tenant checks
 
 ### View-Level Declaration
 

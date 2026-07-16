@@ -155,9 +155,11 @@ class TestBaseSerializerValidateSlug:
 class TestBaseSerializerGetPlugins:
     @patch("core.base.serializers.settings")
     def test_loads_global_plugins_from_settings(self, mock_settings: Any) -> None:
-        mock_settings.SERIALIZER_PLUGINS = [
-            "core.tests.test_serializers_lifecycle.RecordingPlugin"
-        ]
+        mock_settings.REST_FRAMEWORK = {
+            "DEFAULT_SERIALIZER_PLUGINS": [
+                "core.tests.test_serializers_lifecycle.RecordingPlugin"
+            ]
+        }
         with patch("core.base.serializers.import_string", return_value=RecordingPlugin):
             serializer = FakeSerializer()
             plugins = serializer._get_plugins()
@@ -172,7 +174,10 @@ class TestBaseSerializerGetPlugins:
                 extensions = [RecordingPlugin]
                 extensions_exclude = [RecordingPlugin]
 
-        with patch("core.base.serializers.settings", SERIALIZER_PLUGINS=[]):
+        with patch(
+            "core.base.serializers.settings",
+            REST_FRAMEWORK={"DEFAULT_SERIALIZER_PLUGINS": []},
+        ):
             serializer = ExcludingSerializer()
             plugins = serializer._get_plugins()
         assert len(plugins) == 0

@@ -4,8 +4,6 @@ DRF serializer-level validators.
 Validators that plug into serializer Meta.validators for cross-field validation.
 """
 
-from __future__ import annotations
-
 from typing import Any
 
 from rest_framework import serializers
@@ -30,7 +28,8 @@ class UniqueTogetherContextValidator:
         fields: dict[str, str],
         context_fields: dict[str, str] | None = None,
         queryset: Any | None = None,
-        message: str = "This combination already exists.",
+        message: str = "This record already exists.",
+        code: str = "already_exists",
     ) -> None:
         self.fields = fields
         self.context_fields = (
@@ -38,6 +37,7 @@ class UniqueTogetherContextValidator:
         )
         self.queryset = queryset
         self.message = message
+        self.code = code
 
     def __call__(self, attrs: dict[str, Any], serializer: Any) -> None:
         qs = self.queryset
@@ -50,10 +50,20 @@ class UniqueTogetherContextValidator:
         )
 
         filters = {
-            lookup: attrs[field_name] for lookup, field_name in self.fields.items()
+            lookup: attrs[field_name]
+            for lookup, field_name in self.fields.items()
+            if field_name in attrs
         }
+        if not filters:
+            return
+
         for lookup, context_key in self.context_fields.items():
             filters[lookup] = serializer.context[context_key]
 
-        if qs.filter(**filters).exists():
-            raise serializers.ValidationError(self.message)
+        qs = qs.filter(**filters)
+
+        if serializer.instance:
+            qs = qs.exclude(pk=serializer.instance.pk)
+
+        if qs.exists():
+            raise serializers.ValidationError(self.message, code=self.code)

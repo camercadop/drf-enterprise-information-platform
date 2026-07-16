@@ -4,9 +4,6 @@ from core.permissions.base import (
     BasePermission,
     IsOwnerOrReadOnly,
     IsSuperUser,
-    IsTeamMember,
-    IsTenantAdmin,
-    IsTenantOwner,
 )
 
 
@@ -91,65 +88,4 @@ class TestIsSuperUser:
     def test_no_user_denied(self) -> None:
         request = MagicMock()
         request.user = None
-        assert self.permission.has_permission(request, MagicMock()) is False
-
-
-class TestIsTenantOwner:
-    def setup_method(self) -> None:
-        self.permission = IsTenantOwner()
-
-    def test_unauthenticated_denied(self) -> None:
-        request = MagicMock()
-        request.user.is_authenticated = False
-        assert self.permission.has_permission(request, MagicMock()) is False
-
-    def test_no_user_denied(self) -> None:
-        request = MagicMock()
-        request.user = None
-        assert self.permission.has_permission(request, MagicMock()) is False
-
-    def test_owner_allowed(self) -> None:
-        request = MagicMock()
-        request.user.is_authenticated = True
-        request.user.tenant_memberships.filter.return_value.exists.return_value = True
-        assert self.permission.has_permission(request, MagicMock()) is True
-
-    def test_non_owner_denied(self) -> None:
-        request = MagicMock()
-        request.user.is_authenticated = True
-        request.user.tenant_memberships.filter.return_value.exists.return_value = False
-        assert self.permission.has_permission(request, MagicMock()) is False
-
-
-class TestIsTenantAdmin:
-    def setup_method(self) -> None:
-        self.permission = IsTenantAdmin()
-
-    def test_admin_allowed(self) -> None:
-        request = MagicMock()
-        request.user.is_authenticated = True
-        request.user.tenant_memberships.filter.return_value.exists.return_value = True
-        assert self.permission.has_permission(request, MagicMock()) is True
-
-    def test_non_admin_denied(self) -> None:
-        request = MagicMock()
-        request.user.is_authenticated = True
-        request.user.tenant_memberships.filter.return_value.exists.return_value = False
-        assert self.permission.has_permission(request, MagicMock()) is False
-
-
-class TestIsTeamMember:
-    def setup_method(self) -> None:
-        self.permission = IsTeamMember()
-
-    def test_member_allowed(self) -> None:
-        request = MagicMock()
-        request.user.is_authenticated = True
-        request.user.team_memberships.exists.return_value = True
-        assert self.permission.has_permission(request, MagicMock()) is True
-
-    def test_non_member_denied(self) -> None:
-        request = MagicMock()
-        request.user.is_authenticated = True
-        request.user.team_memberships.exists.return_value = False
         assert self.permission.has_permission(request, MagicMock()) is False

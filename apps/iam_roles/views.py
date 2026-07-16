@@ -1,8 +1,8 @@
 """Views for the iam_roles app."""
 
 from apps.iam_roles.models import TenantRole
+from apps.tenants.permissions import IsTenantAdmin
 from core.base.views import BaseViewSet
-from core.permissions.base import IsTenantAdmin
 
 from .serializers import TenantRoleListSerializer, TenantRoleSerializer
 

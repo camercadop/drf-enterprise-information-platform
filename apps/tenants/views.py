@@ -8,10 +8,11 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.iam_users.models import TenantMembership
+from apps.tenants.permissions import IsTenantAdmin
 from apps.tenants.utils import get_tenant_id
 from core.base.views import BaseViewSet
 from core.exceptions.api import ConflictError, PermissionDeniedError
-from core.permissions.base import IsSuperUser, IsTenantAdmin
+from core.permissions.base import IsSuperUser
 
 from .models import Tenant
 from .serializers import (
@@ -100,5 +101,3 @@ class MembershipViewSet(BaseViewSet):
         membership.is_active = True
         membership.save(update_fields=["is_active"])
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-

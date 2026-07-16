@@ -48,9 +48,11 @@ class TestGetPluginsMergeLogic:
         "core.base.serializers.settings",
     )
     def test_global_plugins_loaded_from_settings(self, mock_settings: Any) -> None:
-        mock_settings.SERIALIZER_PLUGINS = [
-            "core.tests.test_plugin_registry.PluginA",
-        ]
+        mock_settings.REST_FRAMEWORK = {
+            "DEFAULT_SERIALIZER_PLUGINS": [
+                "core.tests.test_plugin_registry.PluginA",
+            ]
+        }
         serializer = _make_serializer()
 
         plugins = serializer._get_plugins()
@@ -60,9 +62,11 @@ class TestGetPluginsMergeLogic:
 
     @patch("core.base.serializers.settings")
     def test_local_extensions_merged_with_global(self, mock_settings: Any) -> None:
-        mock_settings.SERIALIZER_PLUGINS = [
-            "core.tests.test_plugin_registry.PluginA",
-        ]
+        mock_settings.REST_FRAMEWORK = {
+            "DEFAULT_SERIALIZER_PLUGINS": [
+                "core.tests.test_plugin_registry.PluginA",
+            ]
+        }
         serializer = _make_serializer(extensions=[PluginB])
 
         plugins = serializer._get_plugins()
@@ -73,10 +77,12 @@ class TestGetPluginsMergeLogic:
 
     @patch("core.base.serializers.settings")
     def test_excluded_plugins_removed(self, mock_settings: Any) -> None:
-        mock_settings.SERIALIZER_PLUGINS = [
-            "core.tests.test_plugin_registry.PluginA",
-            "core.tests.test_plugin_registry.PluginB",
-        ]
+        mock_settings.REST_FRAMEWORK = {
+            "DEFAULT_SERIALIZER_PLUGINS": [
+                "core.tests.test_plugin_registry.PluginA",
+                "core.tests.test_plugin_registry.PluginB",
+            ]
+        }
         serializer = _make_serializer(extensions_exclude=[PluginA])
 
         plugins = serializer._get_plugins()
@@ -86,7 +92,7 @@ class TestGetPluginsMergeLogic:
 
     @patch("core.base.serializers.settings")
     def test_local_plugin_can_be_excluded(self, mock_settings: Any) -> None:
-        mock_settings.SERIALIZER_PLUGINS = []
+        mock_settings.REST_FRAMEWORK = {"DEFAULT_SERIALIZER_PLUGINS": []}
         serializer = _make_serializer(
             extensions=[PluginA, PluginB], extensions_exclude=[PluginB]
         )
@@ -98,9 +104,11 @@ class TestGetPluginsMergeLogic:
 
     @patch("core.base.serializers.settings")
     def test_empty_when_all_excluded(self, mock_settings: Any) -> None:
-        mock_settings.SERIALIZER_PLUGINS = [
-            "core.tests.test_plugin_registry.PluginA",
-        ]
+        mock_settings.REST_FRAMEWORK = {
+            "DEFAULT_SERIALIZER_PLUGINS": [
+                "core.tests.test_plugin_registry.PluginA",
+            ]
+        }
         serializer = _make_serializer(extensions_exclude=[PluginA])
 
         plugins = serializer._get_plugins()
@@ -109,7 +117,7 @@ class TestGetPluginsMergeLogic:
 
     @patch("core.base.serializers.settings")
     def test_no_global_setting_defaults_to_empty(self, mock_settings: Any) -> None:
-        mock_settings.SERIALIZER_PLUGINS = []
+        mock_settings.REST_FRAMEWORK = {"DEFAULT_SERIALIZER_PLUGINS": []}
         serializer = _make_serializer(extensions=[PluginC])
 
         plugins = serializer._get_plugins()
@@ -119,9 +127,11 @@ class TestGetPluginsMergeLogic:
 
     @patch("core.base.serializers.settings")
     def test_order_is_global_then_local(self, mock_settings: Any) -> None:
-        mock_settings.SERIALIZER_PLUGINS = [
-            "core.tests.test_plugin_registry.PluginB",
-        ]
+        mock_settings.REST_FRAMEWORK = {
+            "DEFAULT_SERIALIZER_PLUGINS": [
+                "core.tests.test_plugin_registry.PluginB",
+            ]
+        }
         serializer = _make_serializer(extensions=[PluginA])
 
         plugins = serializer._get_plugins()

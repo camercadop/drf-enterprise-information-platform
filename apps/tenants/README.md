@@ -129,7 +129,7 @@ password_settings = get_tenant_settings(tenant_id, prefix="password_")
 
 Global serializer plugin that enforces ADR-004 (Data Boundary Isolation) and ADR-005 (Explicit Over Implicit Failure) for write operations on tenant-scoped models.
 
-Registered globally via `settings.SERIALIZER_PLUGINS`. Applies automatically to any serializer whose model has a `tenant_id` field.
+Registered globally via `REST_FRAMEWORK["DEFAULT_SERIALIZER_PLUGINS"]`. Applies automatically to any serializer whose model has a `tenant_id` field.
 
 ### Behavior
 
@@ -139,6 +139,18 @@ Registered globally via `settings.SERIALIZER_PLUGINS`. Applies automatically to 
 | `on_pre_update` | Strips `tenant_id` from `validated_data` if it matches the instance. Raises `PermissionDeniedError` if client attempts tenant reassignment. |
 
 Models without a `tenant_id` field are skipped (no-op).
+
+## Tenant Context ViewSet Plugin (`plugins.py`)
+
+Global viewset plugin that injects `tenant_id` into the serializer context from JWT claims.
+
+Registered globally via `REST_FRAMEWORK["DEFAULT_VIEWSET_PLUGINS"]`. Runs during `get_serializer_context` via the `on_build_context` hook, making `tenant_id` available to serializer-level validators (e.g., `UniqueTogetherContextValidator`) before validation runs.
+
+### Behavior
+
+| Hook | Action |
+|------|--------|
+| `on_build_context` | Reads `tenant_id` from `request.auth` and adds it to the serializer context dict. |
 
 ### Opting out
 

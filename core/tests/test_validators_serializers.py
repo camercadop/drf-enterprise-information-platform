@@ -18,6 +18,7 @@ class TestUniqueTogetherContextValidator:
             queryset=qs,
         )
         serializer = MagicMock()
+        serializer.instance = None
         serializer.context = {"tenant_id": "t1"}
 
         validator({"name": "unique"}, serializer)
@@ -32,6 +33,7 @@ class TestUniqueTogetherContextValidator:
             queryset=qs,
         )
         serializer = MagicMock()
+        serializer.instance = None
         serializer.context = {"tenant_id": "t1"}
 
         with pytest.raises(ValidationError, match="already exists"):
@@ -47,6 +49,7 @@ class TestUniqueTogetherContextValidator:
             message="Code must be unique.",
         )
         serializer = MagicMock()
+        serializer.instance = None
         serializer.context = {"tenant_id": "t1"}
 
         with pytest.raises(ValidationError, match="Code must be unique"):
@@ -62,6 +65,7 @@ class TestUniqueTogetherContextValidator:
             queryset=qs,
         )
         serializer = MagicMock()
+        serializer.instance = None
         serializer.context = {"org_id": "org-123"}
 
         validator({"name": "test"}, serializer)
@@ -76,6 +80,7 @@ class TestUniqueTogetherContextValidator:
         validator = UniqueTogetherContextValidator(fields={"name": "name"})
 
         serializer = MagicMock()
+        serializer.instance = None
         serializer.Meta.model = mock_model
         serializer.context = {"tenant_id": "t1"}
 

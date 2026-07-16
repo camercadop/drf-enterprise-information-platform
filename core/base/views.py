@@ -10,7 +10,7 @@ from django.utils.module_loading import import_string
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.permissions import BasePermission, IsAuthenticated
 
-from core.base.serializers import SerializerPlugin
+from core.base.plugins import ViewSetPlugin
 
 
 class BaseGenericViewSet(viewsets.GenericViewSet):
@@ -69,6 +69,17 @@ class BaseGenericViewSet(viewsets.GenericViewSet):
                 kwargs["data"] = self.clean_update_data(kwargs["data"])
         return super().get_serializer(*args, **kwargs)
 
+    def get_serializer_context(self) -> dict[str, Any]:
+        """Build serializer context with viewset plugin contributions.
+
+        Calls on_build_context on all registered viewset plugins, allowing
+        them to inject values (e.g., tenant_id) into the serializer context
+        before validation runs.
+        """
+        context: dict[str, Any] = super().get_serializer_context()
+        self._run_plugins("on_build_context", context)
+        return context
+
     # --- Data preparation ---
 
     def clean_create_data(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -121,33 +132,26 @@ class BaseGenericViewSet(viewsets.GenericViewSet):
 
     # --- Plugin dispatch ---
 
-    def _get_plugins(self) -> list[SerializerPlugin]:
-        """Resolve global serializer plugins from settings.
+    def _get_plugins(self) -> list[ViewSetPlugin]:
+        """Resolve global viewset plugins from REST_FRAMEWORK settings.
 
         Returns:
             List of instantiated plugin objects.
         """
-        global_paths: list[str] = getattr(settings, "SERIALIZER_PLUGINS", [])
+        rest_framework: dict[str, Any] = getattr(settings, "REST_FRAMEWORK", {})
+        global_paths: list[str] = rest_framework.get("DEFAULT_VIEWSET_PLUGINS", [])
         return [import_string(path)() for path in global_paths]
 
     def _run_plugins(self, hook: str, *args: Any) -> None:
-        """Dispatch a named hook to all global serializer plugins.
-
-        Passes the current action's serializer (for request context access)
-        followed by any additional arguments. Skips dispatch if serializer
-        context is unavailable (e.g., no request bound).
+        """Dispatch a named hook to all registered viewset plugins.
 
         Args:
             hook: The plugin method name to invoke.
-            *args: Positional arguments forwarded to the hook after the serializer.
+            *args: Positional arguments forwarded to the hook.
         """
-        try:
-            serializer = self.get_serializer()
-        except AttributeError, AssertionError:
-            return
         for plugin in self._get_plugins():
             if hasattr(plugin, hook):
-                getattr(plugin, hook)(serializer, *args)
+                getattr(plugin, hook)(self, *args)
 
 
 class BaseViewSet(  # type: ignore[misc]

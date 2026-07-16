@@ -5,6 +5,7 @@ from typing import Any
 from rest_framework import serializers
 
 from core.base.serializers import DefaultModelSerializer
+from core.validators.serializers import UniqueTogetherContextValidator
 
 from .models import TenantRole
 
@@ -36,6 +37,12 @@ class TenantRoleSerializer(DefaultModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+        validators = [
+            UniqueTogetherContextValidator(
+                fields={"name": "name"},
+                message="A role with this name already exists.",
+            ),
+        ]
 
     def do_validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         """Prevent kind mutation on update."""

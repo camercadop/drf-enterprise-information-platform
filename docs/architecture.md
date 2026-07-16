@@ -70,7 +70,11 @@ Default deletion strategy across the platform:
 Two complementary patterns for extending behavior:
 
 - **Plugins** — stateless classes for cross-cutting concerns (horizontal)
+  - **Serializer plugins** (`DEFAULT_SERIALIZER_PLUGINS`) — participate in create/update/validate lifecycle
+  - **ViewSet plugins** (`DEFAULT_VIEWSET_PLUGINS`) — participate in context building and destroy lifecycle
 - **Template methods** — overridable hooks for per-class customization (vertical)
+
+Both plugin settings live inside the `REST_FRAMEWORK` configuration dict.
 
 
 ## Authentication

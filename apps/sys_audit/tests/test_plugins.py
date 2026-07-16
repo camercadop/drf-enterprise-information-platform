@@ -1,4 +1,4 @@
-"""Tests for sys_audit.plugins.AuditPlugin."""
+"""Tests for sys_audit.plugins.AuditSerializerPlugin."""
 
 import uuid
 from typing import Any
@@ -7,15 +7,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from apps.sys_audit.models import AuditLog
-from apps.sys_audit.plugins import AuditPlugin
+from apps.sys_audit.plugins import AuditSerializerPlugin
 from tests.factories.users import UserFactory
 
 
 @pytest.mark.django_db
-class TestAuditPluginOnPostCreate:
+class TestAuditSerializerPluginOnPostCreate:
     def test_records_create_action(self) -> None:
         user = UserFactory()
-        plugin = AuditPlugin()
+        plugin = AuditSerializerPlugin()
         serializer = self._make_serializer(user)
         instance = self._make_instance()
 
@@ -27,7 +27,7 @@ class TestAuditPluginOnPostCreate:
 
     def test_stores_full_payload_as_changes(self) -> None:
         user = UserFactory()
-        plugin = AuditPlugin()
+        plugin = AuditSerializerPlugin()
         representation = {"id": "abc", "name": "Test"}
         serializer = self._make_serializer(user, representation=representation)
         instance = self._make_instance()
@@ -38,7 +38,7 @@ class TestAuditPluginOnPostCreate:
         assert entry.changes == representation
 
     def test_skips_when_no_actor(self) -> None:
-        plugin = AuditPlugin()
+        plugin = AuditSerializerPlugin()
         serializer = self._make_serializer(actor=None)
         instance = self._make_instance()
 
@@ -65,10 +65,10 @@ class TestAuditPluginOnPostCreate:
 
 
 @pytest.mark.django_db
-class TestAuditPluginOnPostUpdate:
+class TestAuditSerializerPluginOnPostUpdate:
     def test_records_update_action(self) -> None:
         user = UserFactory()
-        plugin = AuditPlugin()
+        plugin = AuditSerializerPlugin()
         serializer = self._make_serializer(user, validated_data={"name": "New"})
         instance = self._make_instance(name="Old")
 
@@ -79,7 +79,7 @@ class TestAuditPluginOnPostUpdate:
 
     def test_stores_diff_as_changes(self) -> None:
         user = UserFactory()
-        plugin = AuditPlugin()
+        plugin = AuditSerializerPlugin()
         serializer = self._make_serializer(user, validated_data={"name": "New"})
         instance = self._make_instance(name="Old")
 
@@ -109,29 +109,30 @@ class TestAuditPluginOnPostUpdate:
 
 
 @pytest.mark.django_db
-class TestAuditPluginOnPostDestroy:
+class TestAuditViewSetPluginOnPostDestroy:
     def test_records_delete_action(self) -> None:
+        from apps.sys_audit.plugins import AuditViewSetPlugin
+
         user = UserFactory()
-        plugin = AuditPlugin()
-        serializer = self._make_serializer(user)
+        plugin = AuditViewSetPlugin()
+        viewset = self._make_viewset(user)
         instance = self._make_instance()
 
-        plugin.on_post_destroy(serializer, instance)
+        plugin.on_post_destroy(viewset, instance)
 
         entry = AuditLog.objects.get(target_id=instance.pk)
         assert entry.action == "delete"
         assert entry.changes == {}
 
-    def _make_serializer(self, actor: Any) -> MagicMock:
-        serializer = MagicMock()
-        request = MagicMock()
-        request.user = actor
-        request.auth = {"tenant_id": str(uuid.uuid4())}
-        serializer.context = {"request": request}
-        serializer.Meta.model._meta.label_lower = "tenants.team"
-        return serializer
+    def _make_viewset(self, actor: Any) -> MagicMock:
+        viewset = MagicMock()
+        viewset.request.user = actor
+        viewset.request.auth = {"tenant_id": str(uuid.uuid4())}
+        return viewset
 
     def _make_instance(self) -> MagicMock:
         instance = MagicMock()
         instance.pk = uuid.uuid4()
+        instance._meta.label_lower = "tenants.team"
+        type(instance)._meta = MagicMock(label_lower="tenants.team")
         return instance

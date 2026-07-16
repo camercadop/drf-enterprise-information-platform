@@ -12,24 +12,7 @@ from django.utils.module_loading import import_string
 from django.utils.text import slugify
 from rest_framework import serializers
 
-
-class SerializerPlugin:
-    """
-    Base class for serializer plugins.
-
-    Plugins are stateless and participate in the serializer lifecycle.
-    They receive the serializer instance as first argument (which gives access to context/request).
-    Short-circuit by raising any exception.
-
-    Available hooks:
-        on_pre_create(serializer, validated_data)
-        on_post_create(serializer, instance)
-        on_pre_update(serializer, instance, validated_data)
-        on_post_update(serializer, instance)
-        on_post_destroy(serializer, instance)
-        on_pre_validate(serializer, data)
-        on_post_validate(serializer, validated_data)
-    """
+from core.base.plugins import SerializerPlugin
 
 
 class BaseSerializer(serializers.ModelSerializer):
@@ -56,12 +39,12 @@ class BaseSerializer(serializers.ModelSerializer):
         """Resolve the final plugin list for this serializer.
 
         Merge strategy:
-            final = (global from settings.SERIALIZER_PLUGINS)
+            final = (global from settings.DEFAULT_SERIALIZER_PLUGINS)
                   + (local from Meta.extensions)
                   - (excluded from Meta.extensions_exclude)
 
         Global plugins are loaded by dotted path from the Django setting
-        SERIALIZER_PLUGINS. They apply to every serializer that inherits
+        DEFAULT_SERIALIZER_PLUGINS. They apply to every serializer that inherits
         from BaseSerializer. Each plugin decides internally whether to act
         (e.g., by inspecting the model).
 
@@ -73,7 +56,8 @@ class BaseSerializer(serializers.ModelSerializer):
         Execution order: global plugins first (in setting order), then
         local plugins (in declaration order).
         """
-        global_paths: list[str] = getattr(settings, "SERIALIZER_PLUGINS", [])
+        rest_framework: dict[str, Any] = getattr(settings, "REST_FRAMEWORK", {})
+        global_paths: list[str] = rest_framework.get("DEFAULT_SERIALIZER_PLUGINS", [])
         global_plugins: list[type[SerializerPlugin]] = [
             import_string(path) for path in global_paths
         ]

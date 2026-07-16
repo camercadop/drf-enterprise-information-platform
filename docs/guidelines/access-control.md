@@ -45,14 +45,12 @@ Understanding when each method is called is critical:
 | Class | Scope | Checks |
 |-------|-------|--------|
 | `IsSuperUser` | Platform | `request.user.is_superuser` |
-| `IsTenantAdmin` | Tenant | `is_admin=True` on membership (bypasses all permission checks) |
+| `IsTenantAdmin` | Tenant | `is_admin=True` on membership for current tenant (bypasses all permission checks) |
 | `HasTenantPermission(codename)` | Tenant | Codename in role's `permissions` list |
-| `IsTenantOwner` | Tenant | `is_owner=True` on any membership |
 | `IsOwnerOrReadOnly` | Object | Object's `created_by` matches user (writes only) |
-| `IsTeamMember` | Tenant | User has any team membership |
 | `BasePermission` | Foundation | Helper methods for subclasses |
 
-Base classes live in `core.permissions.base`. `HasTenantPermission` lives in `apps.sys_permissions.permissions`.
+`IsSuperUser`, `IsOwnerOrReadOnly`, and `BasePermission` live in `core.permissions.base`. `IsTenantAdmin` lives in `apps.tenants.permissions`. `HasTenantPermission` lives in `apps.sys_permissions.permissions`.
 
 ---
 
@@ -61,10 +59,6 @@ Base classes live in `core.permissions.base`. `HasTenantPermission` lives in `ap
 ### check_ownership(request, obj, owner_field="created_by")
 
 Returns `True` if `obj.<owner_field> == request.user`.
-
-### check_tenant_ownership(request, obj, tenant_field="tenant")
-
-Returns `True` if the requesting user has an active membership in the object's tenant. Superusers bypass this check automatically.
 
 ---
 
@@ -322,8 +316,12 @@ Exits with code `1` on failure. Runs in CI alongside `ruff` and `mypy`.
 The most common pattern is "authenticated for reads, elevated for writes." Use `write_permission_classes`:
 
 ```python
+from apps.tenants.permissions import IsTenantAdmin
+from core.base.views import BaseViewSet
+
+
 class TenantViewSet(BaseViewSet):
-    write_permission_classes = [IsSuperUser]
+    write_permission_classes = [IsTenantAdmin]
 ```
 
 This automatically applies `[IsAuthenticated, IsSuperUser]` to write actions (`create`, `update`, `partial_update`, `destroy`) while reads use only `IsAuthenticated`.
@@ -379,9 +377,14 @@ class IsTenantAdminOrOwner(BasePermission):
         return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj) -> bool:
+        from apps.tenants.utils import get_tenant_id
+
+        tenant_id = get_tenant_id(request)
         is_admin = (
-            hasattr(request.user, "tenant_memberships")
-            and request.user.tenant_memberships.filter(is_admin=True).exists()
+            tenant_id
+            and request.user.memberships.filter(
+                tenant_id=tenant_id, is_active=True, is_admin=True
+            ).exists()
         )
         return is_admin or self.check_ownership(request, obj)
 ```
@@ -447,37 +450,20 @@ flowchart LR
         F[TenantManager] --> G[Scopes queryset by ContextVar tenant_id]
     end
 
-    subgraph "Object Level"
-        C[check_tenant_ownership] --> D[Verifies user membership in object's tenant]
-    end
-
     E[Request] --> A
     E --> F
-    E --> C
 ```
 
 1. **Query level (view)** — `TenantFilterBackend` scopes querysets from JWT claims (see multi-tenancy guideline)
 2. **Query level (ORM)** — `TenantManager` scopes querysets from the ContextVar bound by `TenantJWTAuthentication`
-3. **Object level** — `check_tenant_ownership` verifies the user belongs to the object's tenant
 
-Layers 1 and 2 are independent — both must fail for data to leak (ADR-004).
-
-For object-level checks in custom permissions:
-
-```python
-class IsTenantMemberForObject(BasePermission):
-    message = "You do not have access to this resource."
-
-    def has_object_permission(self, request, view, obj) -> bool:
-        return self.check_tenant_ownership(request, obj)
-```
+Both layers must fail simultaneously for data to leak across tenants (ADR-004).
 
 ---
 
 ## Superuser Bypass
 
 Superusers bypass:
-- `check_tenant_ownership` — implicit in the helper method
 - `TenantFilterBackend` — when `tenant_scoping = False`
 
 Superusers do NOT bypass:
@@ -581,7 +567,6 @@ Key testing patterns:
 | Per-action granularity | Override `get_permissions()` |
 | Object ownership on writes | `IsOwnerOrReadOnly` in `permission_classes` |
 | Tenant isolation on queries | `TenantFilterBackend` (automatic) |
-| Tenant isolation on objects | `check_tenant_ownership` in custom permission |
 | Custom action with different perms | `@action(permission_classes=[...])` |
 | OR logic between roles | Composite permission class |
 | Superuser bypass in custom perm | Explicit `if request.user.is_superuser: return True` |

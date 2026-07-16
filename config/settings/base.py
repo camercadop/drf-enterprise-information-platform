@@ -132,6 +132,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "core.pagination.page.CustomPagination",
     "PAGE_SIZE": 10,
     "DEFAULT_SCHEMA_CLASS": "core.openapi.AutoSchema",
+    "DEFAULT_SERIALIZER_PLUGINS": [
+        "apps.tenants.plugins.TenantInjectionSerializerPlugin",
+        "apps.sys_audit.plugins.AuditSerializerPlugin",
+    ],
+    "DEFAULT_VIEWSET_PLUGINS": [
+        "apps.tenants.plugins.TenantContextViewSetPlugin",
+        "apps.sys_audit.plugins.AuditViewSetPlugin",
+    ],
 }
 
 SPECTACULAR_SETTINGS = {
@@ -144,10 +152,7 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_CACHE_BACKEND": "schema",
 }
 
-SERIALIZER_PLUGINS: list[str] = [
-    "apps.tenants.plugins.TenantInjectionSerializerPlugin",
-    "apps.sys_audit.plugins.AuditPlugin",
-]
+
 
 LOG_LEVEL = env("LOG_LEVEL", default="INFO")
 

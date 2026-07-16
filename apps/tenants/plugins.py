@@ -1,11 +1,12 @@
-"""Serializer plugins for tenant boundary enforcement."""
+"""Tenant plugins for serializer and viewset lifecycle boundaries."""
 
 from typing import Any
 
 from django.db import models
 
 from apps.tenants.utils import get_tenant_id
-from core.base.serializers import BaseSerializer, SerializerPlugin
+from core.base.plugins import SerializerPlugin, ViewSetPlugin
+from core.base.serializers import BaseSerializer
 from core.exceptions.api import PermissionDeniedError
 
 
@@ -57,3 +58,20 @@ class TenantInjectionSerializerPlugin(SerializerPlugin):
                     "Tenant reassignment is not allowed."
                 )
             del validated_data["tenant_id"]
+
+
+class TenantContextViewSetPlugin(ViewSetPlugin):
+    """Injects tenant_id into serializer context from JWT claims.
+
+    This makes tenant_id available to serializer-level validators
+    (e.g., UniqueTogetherContextValidator) before validation runs.
+    """
+
+    def on_build_context(self, viewset: Any, context: dict[str, Any]) -> None:
+        """Add tenant_id to serializer context."""
+        request = context.get("request")
+        if not request:
+            return
+        tenant_id = get_tenant_id(request)
+        if tenant_id:
+            context["tenant_id"] = tenant_id

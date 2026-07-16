@@ -223,13 +223,13 @@ class AuditPlugin(SerializerPlugin):
 
 #### Global (all serializers)
 
-Add the dotted path to `settings.SERIALIZER_PLUGINS`:
+Add the dotted path to `settings.DEFAULT_SERIALIZER_PLUGINS`:
 
 ```python
-# config/settings/base.py
-SERIALIZER_PLUGINS: list[str] = [
+# config/settings/base.py — inside REST_FRAMEWORK dict
+"DEFAULT_SERIALIZER_PLUGINS": [
     "apps.tenants.plugins.TenantInjectionSerializerPlugin",
-    "apps.audit.plugins.AuditPlugin",
+    "apps.sys_audit.plugins.AuditSerializerPlugin",
 ]
 ```
 

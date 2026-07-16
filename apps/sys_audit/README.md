@@ -10,13 +10,16 @@ Implements ADR-009 (Auditability by Design). Every create, update, and delete op
 
 ```mermaid
 graph LR
-    Op[State-changing operation] --> Plugin[AuditPlugin]
-    Plugin --> Helper[log_audit]
+    Op[State-changing operation] --> SerPlugin[AuditSerializerPlugin]
+    SerPlugin --> Helper[log_audit]
+    Op --> ViewPlugin[AuditViewSetPlugin]
+    ViewPlugin --> Helper
     Helper --> DB[(sys_audit_log table)]
 ```
 
-- **AuditPlugin** — a `SerializerPlugin` registered globally in `SERIALIZER_PLUGINS`. Hooks into `on_post_create`, `on_post_update`, and `on_post_destroy` lifecycle boundaries.
-- **log_audit()** — helper function in `services.py`. Single entry point for writing audit records. Used by the plugin and available for direct use in background tasks or management commands.
+- **AuditSerializerPlugin** — a `SerializerPlugin` registered globally in `REST_FRAMEWORK["DEFAULT_SERIALIZER_PLUGINS"]`. Hooks into `on_post_create` and `on_post_update` lifecycle boundaries.
+- **AuditViewSetPlugin** — a `ViewSetPlugin` registered globally in `REST_FRAMEWORK["DEFAULT_VIEWSET_PLUGINS"]`. Hooks into `on_post_destroy` at the viewset level.
+- **log_audit()** — helper function in `services.py`. Single entry point for writing audit records. Used by both plugins and available for direct use in background tasks or management commands.
 
 ## Model: AuditLog
 
@@ -41,7 +44,7 @@ graph LR
 
 ### Automatic (via plugin)
 
-All CRUD operations through `BaseSerializer` and `BaseViewSet` are automatically audited. No action required.
+All CRUD operations through `BaseSerializer` and `BaseViewSet` are automatically audited. No action required. Create and update are captured by `AuditSerializerPlugin`; destroy is captured by `AuditViewSetPlugin`.
 
 ### Manual (via helper)
 
