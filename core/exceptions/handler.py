@@ -3,6 +3,8 @@
 import logging
 from typing import Any
 
+from django.db import IntegrityError
+from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -13,10 +15,30 @@ logger = logging.getLogger(__name__)
 
 def exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
     """Wrap DRF's default handler to produce a standard error envelope."""
+    if isinstance(exc, IntegrityError):
+        logger.warning(f"IntegrityError: {exc}", exc_info=True)
+        return Response(
+            {
+                "status": "ERROR",
+                "code": "validation_error",
+                "data": {"detail": "A data integrity error occurred."},
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     response = drf_exception_handler(exc, context)
 
     if response is None:
-        return None
+        # Handle unhandled exceptions that DRF's handler couldn't process
+        logger.error(f"Unhandled exception: {exc}", exc_info=True)
+        return Response(
+            {
+                "status": "ERROR",
+                "code": "server_error",
+                "data": {"detail": "An unexpected error occurred."},
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     code = _extract_code(exc)
     _log_exception(exc, context, response)

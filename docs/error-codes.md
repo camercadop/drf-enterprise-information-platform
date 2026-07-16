@@ -26,13 +26,13 @@ These codes can be returned by any endpoint.
 
 | Code | HTTP Status | Meaning | Client Action |
 |------|-------------|---------|---------------|
-| `validation_error` | 400 | Request body failed validation | Check `data` for field-specific errors |
+| `validation_error` | 400 | Request body failed validation or data integrity constraint violated (no DB details exposed) | Check `data` for field-specific errors |
 | `authentication_error` | 401 | Missing or invalid credentials | Re-authenticate (login or refresh) |
 | `permission_denied` | 403 | Authenticated but not authorized | User lacks required role or membership |
 | `not_found` | 404 | Resource does not exist or is soft-deleted | Verify the resource ID and tenant context |
 | `conflict` | 409 | Operation conflicts with current resource state | Check current state before retrying |
 | `throttling_error` | 429 | Rate limit exceeded | Retry after backoff |
-| `server_error` | 500 | Unexpected server failure | Retry; report if persistent |
+| `server_error` | 500 | Unexpected server failure (generic, no internal details exposed) | Retry; report if persistent |
 
 ---
 
