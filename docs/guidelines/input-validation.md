@@ -372,7 +372,7 @@ Raise with a string or list for errors not tied to a specific field:
 raise serializers.ValidationError("Cannot create invoice for inactive tenant.")
 ```
 
-This surfaces under `non_field_errors` in the response.
+This surfaces under `GLOBAL_ERRORS` in the response.
 
 ### Error codes
 

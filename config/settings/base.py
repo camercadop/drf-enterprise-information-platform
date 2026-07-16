@@ -131,6 +131,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "core.exceptions.handler.exception_handler",
     "DEFAULT_PAGINATION_CLASS": "core.pagination.page.CustomPagination",
     "PAGE_SIZE": 10,
+    "NON_FIELD_ERRORS_KEY": "GLOBAL_ERRORS",
     "DEFAULT_SCHEMA_CLASS": "core.openapi.AutoSchema",
     "DEFAULT_SERIALIZER_PLUGINS": [
         "apps.tenants.plugins.TenantInjectionSerializerPlugin",
@@ -151,7 +152,6 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_CACHING": True,
     "SCHEMA_CACHE_BACKEND": "schema",
 }
-
 
 
 LOG_LEVEL = env("LOG_LEVEL", default="INFO")
