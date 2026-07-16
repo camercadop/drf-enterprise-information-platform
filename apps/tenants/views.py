@@ -13,12 +13,10 @@ from core.base.views import BaseViewSet
 from core.exceptions.api import ConflictError, PermissionDeniedError
 from core.permissions.base import IsSuperUser, IsTenantAdmin
 
-from .models import Team, Tenant
+from .models import Tenant
 from .serializers import (
     MembershipCreateSerializer,
     MembershipListSerializer,
-    TeamListSerializer,
-    TeamSerializer,
     TenantListSerializer,
     TenantSerializer,
 )
@@ -104,22 +102,3 @@ class MembershipViewSet(BaseViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class TeamViewSet(BaseViewSet):
-    """CRUD for teams."""
-
-    queryset = Team.objects.all()
-    serializer_class = TeamSerializer
-    serializer_classes = {
-        "list": TeamListSerializer,
-    }
-    write_permission_classes = [IsSuperUser]
-    search_fields = ["name", "description"]
-    ordering_fields = ["name", "created_at"]
-    ordering = ["name"]
-
-    @property
-    def tenant_scoping(self) -> bool:  # type: ignore[override]
-        """Superusers see all teams across tenants."""
-        if self.request.user.is_superuser:  # type: ignore[union-attr]
-            return False
-        return True

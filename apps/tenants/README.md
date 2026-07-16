@@ -42,11 +42,12 @@ erDiagram
     Tenant ||--o{ TenantSetting : "has many"
     Tenant ||--o{ TenantRole : "has many"
     Tenant ||--o{ TenantMembership : "has many"
+    Tenant ||--o{ Team : "has many"
     TenantRole ||--o{ TenantMembership : "assigned in"
     User ||--o{ TenantMembership : "belongs to"
 ```
 
-`TenantRole` is defined in `apps.iam_roles.models` and `TenantMembership` in `apps.iam_users.models`, both scoped to a tenant.
+`TenantRole` is defined in `apps.iam_roles.models`, `TenantMembership` in `apps.iam_users.models`, and `Team` in `apps.iam_teams.models` — all scoped to a tenant.
 
 ## API Endpoints
 

@@ -6,9 +6,6 @@
         "create": false,
         "delete": false
       }
-    },
-    "teams": {
-      "label": "Teams"
     }
   }
 }

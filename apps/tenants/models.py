@@ -93,38 +93,4 @@ class TenantSetting(models.Model):
         return f"{self.tenant.code}:{self.key}"
 
 
-class Team(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # Unique identifier for the team
 
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="teams")
-    # The tenant this team belongs to
-
-    name = models.CharField(max_length=255)
-    # Display name of the team
-
-    description = models.TextField(blank=True)
-    # Optional description of the team's purpose
-
-    is_active = models.BooleanField(default=True)
-    # Whether the team is currently active
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    # Timestamp when the team was created
-
-    updated_at = models.DateTimeField(auto_now=True)
-    # Timestamp when the team was last updated
-
-    objects = TenantManager()
-
-    class Meta:
-        db_table = "tenants_teams"
-        ordering = ["name"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["tenant", "name"], name="unique_team_per_tenant"
-            )
-        ]
-
-    def __str__(self) -> str:
-        return f"{self.name} ({self.tenant})"

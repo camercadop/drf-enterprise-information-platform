@@ -4,8 +4,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from apps.iam_teams.models import Team
 from apps.tenants.filters import TenantFilterBackend
-from apps.tenants.models import Team, Tenant
+from apps.tenants.models import Tenant
 from apps.iam_users.models import TenantMembership
 from tests.factories.tenants import (
     TenantFactory,

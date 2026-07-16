@@ -8,6 +8,15 @@ from django.db import models
 from django.utils import timezone
 
 
+class UUIDPrimaryKeyModel(models.Model):
+    """Abstract base class that provides a UUID primary key."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    class Meta:
+        abstract = True
+
+
 class TimeStampedModel(models.Model):
     """
     Abstract base class that provides self-updating created_at and updated_at fields.
@@ -59,13 +68,11 @@ class SoftDeletableModel(models.Model):
         return cls.objects.filter(deleted_at__isnull=False)
 
 
-class BaseModel(TimeStampedModel, SoftDeletableModel):
+class BaseModel(UUIDPrimaryKeyModel, TimeStampedModel, SoftDeletableModel):
     """Default base model for all platform resources.
 
     Provides UUID pk, timestamps, and soft delete.
     """
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     class Meta:
         abstract = True

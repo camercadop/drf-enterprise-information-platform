@@ -7,7 +7,7 @@ from apps.iam_users.models import TenantMembership, User
 from core.fields import ForeignKeyField
 from core.validators import UniqueTogetherContextValidator
 
-from .models import Team, Tenant
+from .models import Tenant
 
 
 class TenantSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
@@ -34,30 +34,6 @@ class TenantListSerializer(serializers.ModelSerializer):  # type: ignore[type-ar
         model = Tenant
         fields = ["id", "name", "code", "is_active"]
 
-
-class TeamSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
-    """Serializer for Team create and update operations."""
-
-    class Meta:
-        model = Team
-        fields = [
-            "id",
-            "tenant",
-            "name",
-            "description",
-            "is_active",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
-
-
-class TeamListSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
-    """Lightweight serializer for listing teams."""
-
-    class Meta:
-        model = Team
-        fields = ["id", "tenant", "name", "description", "is_active"]
 
 
 class MembershipListSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]

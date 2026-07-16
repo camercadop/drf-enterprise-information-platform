@@ -1,0 +1,10 @@
+{
+  "resources": {
+    "teams": {
+      "label": "Teams"
+    },
+    "team_memberships": {
+      "label": "Team Memberships"
+    }
+  }
+}

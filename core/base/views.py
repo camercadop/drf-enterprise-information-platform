@@ -7,19 +7,20 @@ from typing import Any
 from django.conf import settings
 from django.db.models import Model, QuerySet
 from django.utils.module_loading import import_string
-from rest_framework import serializers, viewsets
+from rest_framework import mixins, serializers, viewsets
 from rest_framework.permissions import BasePermission, IsAuthenticated
 
 from core.base.serializers import SerializerPlugin
 
 
-class BaseViewSet(viewsets.ModelViewSet):
-    """
-    Base viewset with common functionality for all models.
+class BaseGenericViewSet(viewsets.GenericViewSet):
+    """Foundation viewset with all shared infrastructure.
 
     Provides per-action serializer/queryset dispatch, data cleaning hooks,
-    pre_*/post_* lifecycle methods, and global plugin dispatch for
-    cross-cutting concerns (e.g., audit logging).
+    pre_*/post_* lifecycle methods, permission dispatch, and global plugin
+    dispatch for cross-cutting concerns (e.g., audit logging).
+
+    Does not include any CRUD mixins — subclasses compose the actions they need.
 
     Attributes:
         serializer_classes: Per-action serializer mapping. Falls back to serializer_class.
@@ -142,8 +143,35 @@ class BaseViewSet(viewsets.ModelViewSet):
         """
         try:
             serializer = self.get_serializer()
-        except (AttributeError, AssertionError):
+        except AttributeError, AssertionError:
             return
         for plugin in self._get_plugins():
             if hasattr(plugin, hook):
                 getattr(plugin, hook)(serializer, *args)
+
+
+class BaseViewSet(  # type: ignore[misc]
+    BaseGenericViewSet,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+):
+    """Full CRUD viewset — default for most resources.
+
+    Equivalent to ModelViewSet but built on BaseGenericViewSet infrastructure.
+    Use this when the resource supports all CRUD operations.
+    """
+
+
+class BaseReadOnlyViewSet(
+    BaseGenericViewSet,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+):
+    """Read-only viewset (list + retrieve).
+
+    Use for resources that should never be created, updated, or deleted
+    via the API (e.g., audit logs, system events).
+    """

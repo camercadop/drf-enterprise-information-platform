@@ -295,7 +295,7 @@ class TestGetMergedCatalog:
         assert "tenants.access" in merged
         assert "tenants.tenants.view" in merged
         assert "tenants.tenants.update" in merged
-        assert "tenants.teams.view" in merged
+        assert "iam_teams.teams.view" in merged
         assert "iam_users.access" in merged
         assert "iam_users.members.view" in merged
         assert "iam_users.members.invite" in merged

@@ -10,39 +10,40 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('tenants', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Tenant',
+            name='TeamMembership',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=255)),
-                ('code', models.CharField(max_length=100, unique=True)),
-                ('is_active', models.BooleanField(default=True)),
-                ('details', models.JSONField(blank=True, default=dict)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
+                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
+                ('deleted_by', models.CharField(blank=True, max_length=255, null=True)),
             ],
             options={
-                'db_table': 'tenants',
-                'ordering': ['name'],
+                'db_table': 'iam_teams_memberships',
+                'ordering': ['-created_at'],
             },
         ),
         migrations.CreateModel(
-            name='TenantSetting',
+            name='Team',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('key', models.CharField(max_length=255)),
-                ('value', models.TextField()),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('tenant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='settings', to='tenants.tenant')),
+                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
+                ('deleted_by', models.CharField(blank=True, max_length=255, null=True)),
+                ('name', models.CharField(max_length=255)),
+                ('description', models.TextField(blank=True)),
+                ('is_active', models.BooleanField(default=True)),
+                ('tenant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)s_set', to='tenants.tenant')),
             ],
             options={
-                'db_table': 'tenants_settings',
-                'ordering': ['key'],
-                'constraints': [models.UniqueConstraint(fields=('tenant', 'key'), name='unique_setting_per_tenant')],
+                'db_table': 'iam_teams',
+                'ordering': ['name'],
             },
         ),
     ]

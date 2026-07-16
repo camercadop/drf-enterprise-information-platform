@@ -57,7 +57,9 @@ Abstract base classes for models, serializers, and views.
 - `SoftDeletableModel` — `deleted_at`, `deleted_by`, soft-delete logic
 - `BaseModel` — UUID PK + timestamps + soft-delete
 - `BaseSerializer` — plugin system + template method lifecycle (`pre_create`/`do_create`/`post_create`, same for update and validate)
-- `BaseViewSet` — per-action serializer/queryset dispatch, lifecycle hooks
+- `BaseGenericViewSet` — shared infrastructure (permissions, serializer/queryset dispatch, lifecycle hooks, plugin dispatch)
+- `BaseViewSet` — full CRUD (extends `BaseGenericViewSet` + all DRF mixins)
+- `BaseReadOnlyViewSet` — list + retrieve only
 
 ### exceptions/
 

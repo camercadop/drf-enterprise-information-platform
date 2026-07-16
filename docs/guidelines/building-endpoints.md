@@ -6,11 +6,13 @@ How to build API endpoints — from choosing the right base class and configurin
 
 ## Overview
 
-Two base classes cover all endpoint types:
+Three base classes cover all endpoint types:
 
 | Class | Use Case |
 |-------|----------|
-| `BaseViewSet` | CRUD resources (routed via `DefaultRouter`) |
+| `BaseViewSet` | Full CRUD resources (routed via `DefaultRouter`) |
+| `BaseReadOnlyViewSet` | Read-only resources (list + retrieve) |
+| `BaseGenericViewSet` | Custom mixin compositions (list + create + destroy, etc.) |
 | `APIView` | Single-action endpoints (login, logout, password change) |
 
 ---
@@ -365,20 +367,55 @@ Available classes in `core.pagination.page`:
 
 ## Read-Only ViewSets
 
-Restrict a viewset to read operations with `http_method_names`:
+Use `BaseReadOnlyViewSet` for resources that only support list and retrieve:
 
 ```python
-from core.base.views import BaseViewSet
+from core.base.views import BaseReadOnlyViewSet
 
 from .models import AuditLog
 from .serializers import AuditLogSerializer
 
 
-class AuditLogViewSet(BaseViewSet):
+class AuditLogViewSet(BaseReadOnlyViewSet):
     queryset = AuditLog.objects.all()
     serializer_class = AuditLogSerializer
-    http_method_names = ["get", "head", "options"]
 ```
+
+---
+
+## Custom Mixin Compositions
+
+For viewsets that need a subset of actions other than full CRUD or read-only, compose DRF mixins with `BaseGenericViewSet`:
+
+```python
+from rest_framework import mixins
+
+from core.base.views import BaseGenericViewSet
+
+
+class TeamMembershipViewSet(
+    BaseGenericViewSet,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+):
+    """List, create, and delete only — no update."""
+
+    queryset = TeamMembership.objects.all()
+    serializer_class = TeamMembershipSerializer
+```
+
+`BaseGenericViewSet` must come first in the class definition to ensure lifecycle hooks and plugin dispatch take precedence over the mixin defaults.
+
+Available DRF mixins:
+
+| Mixin | Action | HTTP Method |
+|-------|--------|-------------|
+| `mixins.ListModelMixin` | list | GET (collection) |
+| `mixins.CreateModelMixin` | create | POST |
+| `mixins.RetrieveModelMixin` | retrieve | GET (detail) |
+| `mixins.UpdateModelMixin` | update / partial_update | PUT / PATCH |
+| `mixins.DestroyModelMixin` | destroy | DELETE |
 
 ---
 
@@ -411,7 +448,8 @@ class MembershipViewSet(BaseViewSet):
 | Scenario | Use |
 |----------|-----|
 | Standard CRUD on a model | `BaseViewSet` |
-| Read-only resource | `BaseViewSet` with `http_method_names = ["get", "head", "options"]` |
+| Read-only resource | `BaseReadOnlyViewSet` |
+| Subset of actions (e.g., list + create + delete) | `BaseGenericViewSet` + DRF mixins |
 | Single POST action (login, webhook) | `APIView` |
 | Wrapping a library view (simplejwt, etc.) | Inherit from the library view directly |
 | Extra action on a resource (activate, deactivate) | `@action` on the ViewSet |

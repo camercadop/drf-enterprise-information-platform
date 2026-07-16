@@ -21,6 +21,9 @@ erDiagram
 All models inherit from a composable abstract hierarchy:
 
 ```
+UUIDPrimaryKeyModel (abstract)
+    └── id (UUID, PK)
+
 TimeStampedModel (abstract)
     ├── created_at
     └── updated_at
@@ -29,12 +32,13 @@ SoftDeletableModel (abstract)
     ├── deleted_at
     └── deleted_by
 
-BaseModel (abstract) ← TimeStampedModel + SoftDeletableModel
-    └── id (UUID, PK)
+BaseModel (abstract) ← UUIDPrimaryKeyModel + TimeStampedModel + SoftDeletableModel
 
 TenantAwareModel (abstract) ← BaseModel
     └── tenant (FK → Tenant)
 ```
+
+`UUIDPrimaryKeyModel` is listed first in the MRO so that `id` appears as the first field in generated migrations.
 
 Apps inherit from the appropriate level:
 - `BaseModel` — platform-level entities (no tenant scope)

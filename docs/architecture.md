@@ -27,7 +27,7 @@
 
 Provides base classes that all domain modules inherit from. This layer defines:
 
-- **Base models** — `TimeStampedModel`, `SoftDeletableModel`, `BaseModel`
+- **Base models** — `UUIDPrimaryKeyModel`, `TimeStampedModel`, `SoftDeletableModel`, `BaseModel`
 - **Base serializers** — `BaseSerializer` with plugin system and template method lifecycle
 - **Base views** — `BaseViewSet` with filtering, ordering, declarative permissions
 - **Exceptions** — Centralized exception hierarchy + custom handler
@@ -46,8 +46,6 @@ Domain apps use namespace prefixes to group related concerns:
 ### apps/ — System Modules (sys_ prefix)
 
 Infrastructure apps that provide cross-cutting system-level concerns. Distinguished from domain modules by the `sys_` prefix.
-
-- **sys_audit** — Append-only audit trail. Records every state-changing operation (create, update, delete) with actor, target, boundary context, and changes. Implemented as a global serializer plugin (`AuditPlugin`) attached at lifecycle boundaries per ADR-008.
 
 ## Multi-Tenancy
 
