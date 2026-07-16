@@ -124,7 +124,7 @@ Write actions (`create`, `update`, `partial_update`, `destroy`) automatically re
 
 ### Complexity Rules
 
-Validated by `core.utils.security.validate_password_complexity`. Rules are tenant-configurable via `TenantSetting`:
+Validated by `core.utils.security.validate_password_complexity`. Rules are tenant-configurable via the `password_policy` `TenantSetting` key (declared in `apps/iam_auth/tenant_settings.json`):
 
 | Rule | Default | Configurable |
 |------|---------|--------------|

@@ -65,7 +65,6 @@ class MembershipViewSet(BaseViewSet):
         if self.action == "create":
             tenant_id = get_tenant_id(self.request)
             if not tenant_id:
-                # During schema introspection there is no real request
                 if getattr(self, "swagger_fake_view", False):
                     return context
                 raise PermissionDeniedError("No tenant context in token.")

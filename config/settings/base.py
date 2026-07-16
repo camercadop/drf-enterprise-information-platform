@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "apps.sys_audit",
     "apps.sys_health",
     "apps.sys_permissions",
+    "apps.tenant_settings",
     "apps.tenants",
     "apps.iam_teams",
     "apps.iam_roles",

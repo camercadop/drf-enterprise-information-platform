@@ -30,9 +30,11 @@ uv run python manage.py runserver
 
 ## Project Structure
 
+Apps are grouped by naming convention. See [Architecture](architecture.md) for details.
+
 ```
 drf-enterprise-information-platform/
-  apps/           # Domain modules (identity, tenants, etc.)
+  apps/           # Domain modules and infrastructure apps
   core/           # Framework foundations (base classes, utils, shared infrastructure)
     base/         # Base models, serializers, views
     exceptions/   # Custom exception hierarchy

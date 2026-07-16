@@ -1,0 +1,31 @@
+{
+  "settings": {
+    "password_policy": {
+      "label": "Password policy",
+      "namespace": "security",
+      "type": "json",
+      "default": "{\"min_length\": 8, \"require_uppercase\": true, \"require_digit\": true, \"require_special\": false}",
+      "private": false,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "min_length": {
+            "type": "integer",
+            "minimum": 6,
+            "maximum": 16
+          },
+          "require_uppercase": {
+            "type": "boolean"
+          },
+          "require_digit": {
+            "type": "boolean"
+          },
+          "require_special": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

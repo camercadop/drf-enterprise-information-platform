@@ -123,18 +123,25 @@ On success, the current password hash is saved to `UserPasswordHistory` before u
 
 ## Password Complexity
 
-The default policy applies when no tenant-level `password_policy` setting is configured:
+The default policy is applied when no tenant-level `password_policy` setting has been saved. It is declared in `apps/iam_auth/tenant_settings.json` and returned by `get_tenant_setting()` as the catalog default:
 
 | Rule | Default |
 |------|---------|
 | `min_length` | 8 |
 | `require_uppercase` | true |
-| `require_lowercase` | true |
-| `require_digits` | true |
-| `require_special` | true |
-| `forbidden_words` | [] |
+| `require_digit` | true |
+| `require_special` | false |
 
-Tenants can override these by storing a JSON object under the `password_policy` tenant setting.
+Tenants can override these by storing a JSON-encoded object under the `password_policy` tenant setting (type: `json`, declared in `apps/iam_auth/tenant_settings.json`).
+
+Example value sent to the API:
+
+```json
+{
+  "key": "password_policy",
+  "value": "{\"min_length\": 12, \"require_uppercase\": true}"
+}
+```
 
 ## Models
 

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tenant Settings Catalog",
+  "description": "Declares tenant-configurable settings for an app. Each entry defines a known setting key, its type, default value, and optional JSON Schema validation.",
+  "type": "object",
+  "required": ["settings"],
+  "additionalProperties": false,
+  "properties": {
+    "settings": {
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "type": "object",
+          "required": ["label", "namespace", "type", "default"],
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "namespace": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["string", "integer", "boolean", "json"]
+            },
+            "default": {
+              "type": "string"
+            },
+            "private": {
+              "type": "boolean"
+            },
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
