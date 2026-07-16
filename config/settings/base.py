@@ -83,6 +83,7 @@ CACHES = {
         "OPTIONS": {
             "socket_connect_timeout": env.int("REDIS_CONNECT_TIMEOUT", default=3),
             "socket_timeout": env.int("REDIS_SOCKET_TIMEOUT", default=3),
+            "protocol": 2,
         },
     },
     "schema": {

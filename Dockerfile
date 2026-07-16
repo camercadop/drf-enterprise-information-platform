@@ -11,8 +11,6 @@ RUN uv sync --no-dev --frozen
 
 COPY . .
 
-RUN uv run python manage.py collectstatic --noinput
-
 # --- Stage 2: Runtime ---
 FROM python:3.14-slim
 

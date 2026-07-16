@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # PostgreSQL Database Service
@@ -44,7 +43,7 @@ services:
       # Database connection string for Django
       DATABASE_URL: postgresql://eip_user:eip_password@postgres:5432/eip_dev
       # Redis connection URL for caching and task queues
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: redis://:redis_password@redis:6379/0
       # Django settings module to use
       DJANGO_SETTINGS_MODULE: config.settings.dev
       # Security settings
