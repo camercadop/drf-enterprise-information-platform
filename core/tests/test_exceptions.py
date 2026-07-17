@@ -71,7 +71,10 @@ class TestExceptionHandler:
         exc = RuntimeError("unexpected")
         context = {"view": MagicMock(), "request": MagicMock()}
         response = exception_handler(exc, context)
-        assert response is None
+        assert response is not None
+        assert response.status_code == 500
+        assert response.data["status"] == "ERROR"
+        assert response.data["code"] == "server_error"
 
 
 class TestExtractCode:
