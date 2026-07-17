@@ -1,6 +1,20 @@
 {
   "resources": {
-    "users": false,
+    "users": {
+      "label": "Users",
+      "actions": {
+        "view": {
+          "label": "View users",
+          "readonly": true,
+          "default_roles": {
+            "owner": 1,
+            "admin": 1,
+            "member": 1,
+            "viewer": 1
+          }
+        }
+      }
+    },
     "members": {
       "label": "Members",
       "actions": {
@@ -10,17 +24,32 @@
         "view": {
           "label": "View members",
           "readonly": true,
-          "default_roles": { "owner": 1, "admin": 1, "member": 1, "viewer": 1 }
+          "default_roles": {
+            "owner": 1,
+            "admin": 1,
+            "member": 1,
+            "viewer": 1
+          }
         },
         "invite": {
           "label": "Invite members",
           "readonly": false,
-          "default_roles": { "owner": 1, "admin": 1, "member": 0, "viewer": 0 }
+          "default_roles": {
+            "owner": 1,
+            "admin": 1,
+            "member": 0,
+            "viewer": 0
+          }
         },
         "remove": {
           "label": "Remove members",
           "readonly": false,
-          "default_roles": { "owner": 1, "admin": 1, "member": 0, "viewer": 0 }
+          "default_roles": {
+            "owner": 1,
+            "admin": 1,
+            "member": 0,
+            "viewer": 0
+          }
         }
       }
     }

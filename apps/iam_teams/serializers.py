@@ -26,6 +26,12 @@ class TeamSerializer(DefaultModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+        validators = [
+            UniqueTogetherContextValidator(
+                fields={"name": "name"},
+                message="A team with this name already exists in this tenant.",
+            ),
+        ]
 
 
 class TeamListSerializer(DefaultModelSerializer):

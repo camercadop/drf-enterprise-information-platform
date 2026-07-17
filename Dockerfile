@@ -18,7 +18,8 @@ WORKDIR /app
 
 RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
 
-COPY --from=builder /app /app
+COPY --from=builder /app/.venv /app/.venv
+COPY . .
 
 RUN chown -R appuser:appuser /app
 
