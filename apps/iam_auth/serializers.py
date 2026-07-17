@@ -12,6 +12,7 @@ from apps.iam_users.models import TenantMembership
 from core.utils.security import validate_password_complexity
 
 from .models import PASSWORD_HISTORY_LIMIT, UserPasswordHistory
+from .signals import password_changed
 
 
 class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
@@ -155,6 +156,7 @@ class PasswordChangeSerializer(serializers.Serializer):  # type: ignore[type-arg
         UserPasswordHistory.objects.create(user=user, hashed_password=user.password)
         user.set_password(self.validated_data["new_password"])
         user.save(update_fields=["password"])
+        password_changed.send(sender=self.__class__, email=user.email)
 
 
 class PasswordChangeResponseSerializer(serializers.Serializer):  # type: ignore[type-arg]

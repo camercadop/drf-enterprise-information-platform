@@ -64,6 +64,14 @@ Default deletion strategy across the platform:
 - `model.hard_delete()` performs actual deletion
 - Querysets exclude soft-deleted records by default
 
+Soft-delete logic is intentionally distributed across layers — each layer owns its own concern:
+
+- **Model** (`SoftDeletableModel`) — deletion behavior and queryset helpers
+- **Filter** (`SoftDeleteFilterBackend`) — queryset scoping and `?include_deleted` parameter
+- **Serializer** (`SoftDeletableSerializerMixin`) — API representation of deleted state
+
+No consolidation into a single plugin is planned.
+
 ## Extensibility Model
 
 Two complementary patterns for extending behavior:
@@ -75,6 +83,10 @@ Two complementary patterns for extending behavior:
 
 Both plugin settings live inside the `REST_FRAMEWORK` configuration dict.
 
+
+## Business Logic Layer
+
+There is no dedicated service layer. Business logic lives in models, serializers (via the lifecycle hooks and plugin system), and views. A service layer may be introduced for specific domains when complexity justifies it.
 
 ## Authentication
 

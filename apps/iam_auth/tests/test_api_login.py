@@ -1,7 +1,10 @@
 import pytest
+from django.core.cache import cache
+from unittest.mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from apps.iam_auth.views import LoginView
 from apps.iam_users.models import TenantMembership, User
 from tests.base import BaseActionAPITest
 from tests.factories.tenants import (
@@ -9,6 +12,12 @@ from tests.factories.tenants import (
     TenantMembershipFactory,
     TenantRoleFactory,
 )
+
+
+@pytest.fixture(autouse=True)
+def clear_cache() -> None:
+    """Clear cache before each test to avoid state leakage."""
+    cache.clear()
 
 
 class TestLoginView(BaseActionAPITest):
@@ -88,3 +97,32 @@ class TestLoginView(BaseActionAPITest):
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_failed_login_sends_login_failed_signal(self) -> None:
+        from apps.iam_auth.signals import login_failed
+        with patch.object(login_failed, "send") as mock_send:
+            self.client.post(
+                self.url, {"email": self.user.email, "password": "WrongPassword1!"}
+            )
+            mock_send.assert_called_once_with(
+                sender=LoginView, email=self.user.email
+            )
+
+    def test_locked_account_is_rejected(self) -> None:
+        cache.set(f"auth:lockout:locked:{self.user.email}", 1)
+
+        response = self.client.post(
+            self.url, {"email": self.user.email, "password": "TestPass123!"}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["code"] == "account_locked"
+
+    def test_successful_login_clears_lockout(self) -> None:
+        cache.set(f"auth:lockout:attempts:{self.user.email}", 3)
+
+        self.client.post(
+            self.url, {"email": self.user.email, "password": "TestPass123!"}
+        )
+
+        assert cache.get(f"auth:lockout:attempts:{self.user.email}") is None

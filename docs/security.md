@@ -155,6 +155,73 @@ POST /api/auth/password/change/ {old_password, new_password}
 
 ---
 
+## Login Protection
+
+### Account Lockout
+
+Accounts are locked after a configurable number of consecutive failed login attempts. Lockout state is stored in Redis with no DB writes.
+
+**Redis keys:**
+- `auth:lockout:attempts:{email}` — failed attempt counter, TTL matches lockout duration
+- `auth:lockout:locked:{email}` — lockout flag, TTL drives auto-unlock
+
+**Flow:**
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant Redis
+
+    Client->>API: POST /api/auth/login/ {email, password}
+    API->>Redis: check auth:lockout:locked:{email}
+    alt account is locked
+        API-->>Client: 400 account_locked
+    else account is not locked
+        API->>API: validate credentials
+        alt credentials invalid
+            API->>Redis: incr auth:lockout:attempts:{email}
+            alt attempts >= MAX_ATTEMPTS
+                API->>Redis: set auth:lockout:locked:{email} TTL=LOCKOUT_DURATION
+            end
+            API-->>Client: 401 authentication_failed
+        else credentials valid
+            API->>Redis: delete auth:lockout:attempts:{email}
+            API->>Redis: delete auth:lockout:locked:{email}
+            API-->>Client: 200 {access, refresh}
+        end
+    end
+
+    Client->>API: POST /api/auth/password/change/
+    API->>API: validate + change password
+    API->>Redis: delete auth:lockout:attempts:{email}
+    API->>Redis: delete auth:lockout:locked:{email}
+    API-->>Client: 200 {access}
+
+    Client->>API: POST /api/auth/unlock/{email}/
+    API->>API: check requester is tenant admin or superuser
+    API->>Redis: delete auth:lockout:attempts:{email}
+    API->>Redis: delete auth:lockout:locked:{email}
+    API-->>Client: 204 No Content
+```
+
+**Configuration** (`config/settings/base.py` under `AUTH_LOCKOUT`):
+
+| Setting | Env var | Default | Description |
+|---------|---------|---------|-------------|
+| `MAX_ATTEMPTS` | `AUTH_LOCKOUT_MAX_ATTEMPTS` | 5 | Failed attempts before lockout. 0 = disabled |
+| `LOCKOUT_DURATION` | `AUTH_LOCKOUT_DURATION` | 900 | Lockout duration in seconds. 0 = manual unlock only |
+
+**Manual unlock:**
+
+`POST /api/auth/unlock/{email}/` clears the lockout state for the given email.
+
+- Tenant admins (`is_admin=True`) can unlock any account in their tenant except their own
+- Superusers can unlock any account
+- A user cannot unlock their own account (error code: `self_unlock_forbidden`)
+
+---
+
 ## Session Invalidation
 
 | Action | Effect |

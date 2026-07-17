@@ -11,6 +11,13 @@ JWT-based authentication with token blacklisting, tenant context, password manag
 | POST | `/api/auth/logout/` | Yes | Blacklists the provided refresh token |
 | POST | `/api/auth/logout-all/` | Yes | Blacklists all outstanding refresh tokens for the user |
 | POST | `/api/auth/password/change/` | Yes | Changes password and returns a new access token |
+| POST | `/api/auth/unlock/{email}/` | Yes | Unlocks a locked account (tenant admin or superuser only) |
+
+## Account Lockout
+
+See [Security — Login Protection](../../docs/security.md#login-protection) for the full lockout design, configuration, and unlock flow.
+
+Implementation: `apps/iam_auth/lockout.py`, `apps/iam_auth/signals.py`.
 
 ## Login
 
@@ -147,12 +154,23 @@ Example value sent to the API:
 
 - `UserPasswordHistory` — stores hashed passwords per user to enforce reuse prevention.
 
+## Signals
+
+Defined in `apps/iam_auth/signals.py`:
+
+| Signal | Arguments | Description |
+|--------|-----------|-------------|
+| `login_failed` | `email: str` | Sent when a login attempt fails due to invalid credentials. The lockout receiver is connected to this signal. |
+| `password_changed` | `email: str` | Sent when a user successfully changes their password. The lockout clear receiver is connected to this signal. |
+
 ## Error Responses
 
 Beyond login errors (documented above), other endpoints return:
 
 | Endpoint | Condition | Error |
 |----------|-----------|-------|
+| Login | Account locked | `{"detail": "Account is locked due to too many failed login attempts."}` with code `account_locked` |
+| Unlock | Requester targets their own account | `{"detail": "You cannot unlock your own account."}` with code `self_unlock_forbidden` |
 | Refresh | Expired or blacklisted token | `{"detail": "Token is invalid or expired.", "code": "token_not_valid"}` |
 | Logout | Invalid or expired refresh token | `{"refresh": ["Invalid or expired token."]}` |
 | Password change | Wrong old password | `{"old_password": ["Current password is incorrect."]}` |

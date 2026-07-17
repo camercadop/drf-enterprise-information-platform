@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import status
+from rest_framework import serializers, status
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -11,6 +12,9 @@ from rest_framework_simplejwt.token_blacklist.models import (
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from apps.tenants.utils import get_tenant_id
+
+from .lockout import clear_lockout, is_locked
 from .serializers import (
     LoginSerializer,
     LogoutSerializer,
@@ -18,13 +22,45 @@ from .serializers import (
     PasswordChangeSerializer,
     RefreshSerializer,
 )
+from .signals import login_failed
 
 
 class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
-    """Authenticate user and return JWT token pair."""
+    """Authenticate user and return JWT token pair.
+
+    Enforces account lockout: rejects login if the account is locked, records
+    failed attempts via the ``login_failed`` signal, and clears lockout state
+    on success.
+    """
 
     permission_classes = (AllowAny,)  # type: ignore[assignment]
     serializer_class = LoginSerializer
+
+    def post(self, request: Request, *args: object, **kwargs: object) -> Response:
+        """Handle login, enforcing lockout checks around the auth flow.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            JWT token pair response on success.
+        """
+        email: str = request.data.get("email", "") if isinstance(request.data, dict) else ""
+
+        if is_locked(email):
+            raise serializers.ValidationError(
+                {"detail": "Account is locked due to too many failed login attempts."},
+                code="account_locked",
+            )
+
+        try:
+            response = super().post(request, *args, **kwargs)
+        except AuthenticationFailed:
+            login_failed.send(sender=self.__class__, email=email)
+            raise
+
+        clear_lockout(email)
+        return response
 
 
 class RefreshView(TokenRefreshView):  # type: ignore[type-arg]
@@ -59,6 +95,53 @@ class LogoutAllView(APIView):
         )
         for token in tokens:
             BlacklistedToken.objects.create(token=token)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UnlockAccountView(APIView):
+    """Allow tenant admins and superusers to unlock a locked account.
+
+    Tenant admins can unlock any account within their tenant except their own.
+    Superusers can unlock any account.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses={204: None})
+    def post(self, request: Request, email: str) -> Response:
+        """Unlock the account associated with the given email.
+
+        Args:
+            request: The authenticated DRF request.
+            email: The email address of the account to unlock.
+
+        Returns:
+            204 No Content on success.
+        """
+        if request.user.email == email:
+            raise serializers.ValidationError(
+                {"detail": "You cannot unlock your own account."},
+                code="self_unlock_forbidden",
+            )
+
+        is_superuser: bool = bool(request.user.is_superuser)
+
+        if not is_superuser:
+            tenant_id = get_tenant_id(request)
+            if not tenant_id:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+
+            membership = (
+                request.user.memberships.filter(
+                    tenant_id=tenant_id,
+                    is_active=True,
+                    is_admin=True,
+                ).first()
+            )
+            if not membership:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+
+        clear_lockout(email)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

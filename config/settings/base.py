@@ -190,6 +190,11 @@ LOGGING = {
     },
 }
 
+AUTH_LOCKOUT = {
+    "MAX_ATTEMPTS": env.int("AUTH_LOCKOUT_MAX_ATTEMPTS", default=5),
+    "LOCKOUT_DURATION": env.int("AUTH_LOCKOUT_DURATION", default=900),
+}
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
         minutes=env.int("ACCESS_TOKEN_LIFETIME_MINUTES", default=30)

@@ -1,7 +1,15 @@
+from django.core.cache import cache
 from rest_framework import status
 
+import pytest
 from apps.iam_auth.models import UserPasswordHistory
 from tests.base import BaseActionAPITest
+
+
+@pytest.fixture(autouse=True)
+def clear_cache() -> None:
+    """Clear cache before each test to avoid state leakage."""
+    cache.clear()
 
 
 class TestPasswordChangeView(BaseActionAPITest):
@@ -85,3 +93,19 @@ class TestPasswordChangeView(BaseActionAPITest):
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_password_change_clears_lockout(self) -> None:
+        cache.set(f"auth:lockout:attempts:{self.user.email}", 3)
+        cache.set(f"auth:lockout:locked:{self.user.email}", 1)
+
+        self.client.post(
+            self.url,
+            {
+                "old_password": "TestPass123!",
+                "new_password": "NewSecure456!",
+                "new_password_confirmation": "NewSecure456!",
+            },
+        )
+
+        assert cache.get(f"auth:lockout:attempts:{self.user.email}") is None
+        assert cache.get(f"auth:lockout:locked:{self.user.email}") is None

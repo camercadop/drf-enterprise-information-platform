@@ -27,6 +27,7 @@ These codes can be returned by any endpoint.
 | Code | HTTP Status | Meaning | Client Action |
 |------|-------------|---------|---------------|
 | `validation_error` | 400 | Request body failed validation or data integrity constraint violated (no DB details exposed) | Check `data` for field-specific errors |
+| `account_locked` | 400 | Account is locked due to too many failed login attempts | Wait for auto-unlock or contact an admin |
 | `authentication_error` | 401 | Missing or invalid credentials | Re-authenticate (login or refresh) |
 | `permission_denied` | 403 | Authenticated but not authorized | User lacks required role or membership |
 | `not_found` | 404 | Resource does not exist or is soft-deleted | Verify the resource ID and tenant context |
