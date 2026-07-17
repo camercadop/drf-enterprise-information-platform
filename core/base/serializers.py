@@ -22,7 +22,7 @@ class BaseSerializer(serializers.ModelSerializer):
 
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
-    id = serializers.IntegerField(read_only=True)
+    id = serializers.UUIDField(read_only=True)
 
     class Meta:
         abstract = True
@@ -199,7 +199,6 @@ class SoftDeletableSerializerMixin:
         if instance.deleted_at:
             representation["is_deleted"] = True
         else:
-            representation["is_deleted"] = False
             representation.pop("deleted_at", None)
             representation.pop("deleted_by", None)
         return representation

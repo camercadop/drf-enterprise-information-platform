@@ -544,6 +544,7 @@ def test_skips_model_without_tenant(self):
 | Using `Meta.extensions` for a concern shared across 3+ serializers | Repetitive, easy to forget | Register as a global plugin in settings instead |
 | Declaring a list serializer with `BaseSerializer` | Unnecessary plugin overhead for read-only operations | Use plain `serializers.ModelSerializer` for list serializers |
 | Using `self.context` to pass model data between hooks | Fragile coupling, hard to trace | Pass data via `validated_data` or instance attributes |
+| Using `do_validate` when a validator or `validate_<field>` would suffice | Harder to reuse, test, and discover | Prefer `Meta.validators` → `validate_<field>` → `do_validate` in that order |
 | Overriding `save()` on a `BaseSerializer` subclass | Bypasses the entire lifecycle (plugins + hooks) | Use `do_create`/`do_update` for custom save logic |
 
 ---
@@ -560,7 +561,9 @@ def test_skips_model_without_tenant(self):
 | Enrich data before save | `pre_create` / `pre_update` hook |
 | Custom save logic | `do_create` / `do_update` hook |
 | Side effects after save | `post_create` / `post_update` hook |
-| Cross-field validation | `do_validate` hook (see [Input Validation](input-validation.md)) |
+| Uniqueness, cross-field constraints, model constraints (reusable) | `Meta.validators` (e.g. `UniqueTogetherContextValidator`) |
+| Single-field constraint or normalization | `validate_<field>` method |
+| Validation not expressible as a validator or `validate_<field>` | `do_validate` hook — last resort (see [Input Validation](input-validation.md)) |
 | Field-level validation | `validate_<field>` method (see [Input Validation](input-validation.md)) |
 | Behavior shared across 3+ serializers | Plugin (global if universal, local if selective) |
 | Behavior specific to one serializer | Template method hook |

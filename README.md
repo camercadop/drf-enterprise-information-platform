@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/camercadop/drf-enterprise-information-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/camercadop/drf-enterprise-information-platform/actions/workflows/ci.yml)
 
-Multi-tenant enterprise platform built with Django REST Framework. Designed as a modular monolith with convention-over-configuration defaults, a plugin-based extensibility model, and security by default.
+Multi-tenant enterprise platform built with Django REST Framework. Provides tenant isolation, audit trails, JWT authentication, and role-based access control out of the box. Designed as a modular monolith with convention-over-configuration defaults, a plugin-based extensibility model, and security-first design — so domain teams can focus on business logic instead of reinventing infrastructure.
 
 ## Why This Exists
 
