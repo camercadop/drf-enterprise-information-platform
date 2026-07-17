@@ -26,6 +26,28 @@
         },
         "additionalProperties": false
       }
+    },
+    "ip_allowlist": {
+      "label": "IP allowlist",
+      "namespace": "security",
+      "type": "json",
+      "default": "[]",
+      "private": false,
+      "schema": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "ip_blocklist": {
+      "label": "IP blocklist",
+      "namespace": "security",
+      "type": "json",
+      "default": "[]",
+      "private": false,
+      "schema": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
     }
   }
 }

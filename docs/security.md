@@ -271,6 +271,65 @@ sequenceDiagram
 
 ---
 
+## IP Access Control
+
+Tenants can restrict login access by IP address using CIDR-based allowlists and blocklists, configured via `TenantSetting`.
+
+### Settings
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `ip_allowlist` | JSON array of CIDR strings | `[]` | If non-empty, only matching IPs may log in |
+| `ip_blocklist` | JSON array of CIDR strings | `[]` | Matching IPs are always denied |
+
+Both IPv4 and IPv6 CIDR ranges are supported (e.g. `192.168.1.0/24`, `10.0.0.1/32`). Invalid entries are silently skipped.
+
+### Evaluation Order
+
+Blocklist takes precedence:
+
+1. If the client IP matches any blocklist CIDR — deny
+2. If the allowlist is non-empty and the IP matches no entry — deny
+3. Otherwise — allow
+
+An empty allowlist imposes no restriction.
+
+### Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant DB
+
+    Client->>API: POST /api/auth/login/ {email, password, tenant_id?}
+    API->>DB: Validate credentials + resolve tenant membership
+    API->>DB: Load ip_allowlist + ip_blocklist for tenant
+    alt IP in blocklist
+        API-->>Client: 403 ip_blocked
+    else allowlist non-empty and IP not in allowlist
+        API-->>Client: 403 ip_blocked
+    else IP allowed
+        API-->>Client: 200 {access, refresh, user}
+    end
+```
+
+When blocked, the response is `403 Forbidden` with error code `ip_blocked`:
+
+```json
+{
+    "status": "ERROR",
+    "code": "ip_blocked",
+    "data": {
+        "detail": "Login not allowed from this IP address."
+    }
+}
+```
+
+Implementation: `apps/iam_auth/ip_filter.py`, `apps/iam_auth/serializers.py`.
+
+---
+
 ## Session Invalidation
 
 | Action | Effect |

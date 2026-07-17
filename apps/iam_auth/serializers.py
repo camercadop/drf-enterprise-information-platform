@@ -1,7 +1,9 @@
+import json
 from typing import Any
 
 from django.contrib.auth.hashers import check_password
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
@@ -9,8 +11,11 @@ from rest_framework_simplejwt.serializers import (
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.iam_users.models import TenantMembership
+from apps.tenants.utils import get_tenant_setting
+from core.utils.request import get_client_ip
 from core.utils.security import validate_password_complexity
 
+from .ip_filter import is_ip_blocked
 from .models import PASSWORD_HISTORY_LIMIT, UserPasswordHistory
 from .signals import password_changed
 
@@ -29,9 +34,11 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
         data: dict[str, Any] = super().validate(attrs)
 
         membership = self._resolve_tenant_membership(tenant_id)
+        resolved_tenant_id = str(membership.tenant_id)
+
+        self._enforce_ip_policy(resolved_tenant_id)
 
         # Generate tokens with tenant_id claim
-        resolved_tenant_id = str(membership.tenant_id)
         refresh = self.get_token(self.user)
         refresh["tenant_id"] = resolved_tenant_id
         data["refresh"] = str(refresh)
@@ -45,6 +52,37 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
             "tenant_id": resolved_tenant_id,
         }
         return data
+
+    def _enforce_ip_policy(self, tenant_id: str) -> None:
+        """Block login if the client IP violates the tenant's IP policy.
+
+        Loads ip_allowlist and ip_blocklist from tenant settings and delegates
+        to is_ip_blocked. Raises PermissionDenied with code ip_blocked if denied.
+        Skips enforcement when the client IP cannot be resolved.
+
+        Args:
+            tenant_id: The resolved tenant UUID string.
+
+        Raises:
+            PermissionDenied: When the client IP is blocked by tenant policy.
+        """
+        request = self.context.get("request")
+        if not request:
+            return
+
+        ip = get_client_ip(request)
+        if not ip:
+            return
+
+        raw_allowlist = get_tenant_setting(tenant_id, "ip_allowlist") or "[]"
+        raw_blocklist = get_tenant_setting(tenant_id, "ip_blocklist") or "[]"
+        allowlist: list[str] = json.loads(raw_allowlist)
+        blocklist: list[str] = json.loads(raw_blocklist)
+
+        if is_ip_blocked(ip, allowlist, blocklist):
+            exc = PermissionDenied(detail="Login not allowed from this IP address.")
+            exc.detail.code = "ip_blocked"  # type: ignore[union-attr]
+            raise exc
 
     def _resolve_tenant_membership(self, tenant_id: Any) -> TenantMembership:
         """Resolve which tenant the user is logging into."""

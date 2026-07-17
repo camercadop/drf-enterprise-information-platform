@@ -32,6 +32,7 @@ These codes can be returned by any endpoint.
 | `permission_denied` | 403 | Authenticated but not authorized | User lacks required role or membership |
 | `not_found` | 404 | Resource does not exist or is soft-deleted | Verify the resource ID and tenant context |
 | `conflict` | 409 | Operation conflicts with current resource state | Check current state before retrying |
+| `ip_blocked` | 403 | Login attempt from a blocked or non-allowlisted IP address | Contact tenant admin |
 | `throttling_error` | 429 | Rate limit exceeded | Retry after backoff |
 | `server_error` | 500 | Unexpected server failure (generic, no internal details exposed) | Retry; report if persistent |
 

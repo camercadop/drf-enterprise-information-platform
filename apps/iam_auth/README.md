@@ -30,6 +30,28 @@ See [Security — Login Protection](../../docs/security.md#login-protection) for
 
 Implementation: `apps/iam_auth/lockout.py`, `apps/iam_auth/signals.py`.
 
+## IP Allowlist / Blocklist
+
+Tenants can restrict login access by IP address using CIDR-based allowlists and blocklists. Both settings are optional and independent.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `ip_allowlist` | JSON array of CIDR strings | `[]` | If non-empty, only IPs matching an entry are allowed |
+| `ip_blocklist` | JSON array of CIDR strings | `[]` | IPs matching any entry are denied regardless of allowlist |
+
+Evaluation order (blocklist wins):
+1. If the IP matches any blocklist entry — deny
+2. If the allowlist is non-empty and the IP matches no entry — deny
+3. Otherwise — allow
+
+An empty allowlist means no restriction. Both IPv4 and IPv6 CIDR ranges are supported. Invalid CIDR entries are silently skipped.
+
+When blocked, returns `403 Forbidden` with code `ip_blocked`.
+
+See [Security — IP Access Control](../../docs/security.md#ip-access-control) for the full flow.
+
+Implementation: `apps/iam_auth/ip_filter.py`.
+
 ## Rate Limiting
 
 Login attempts are throttled independently by IP address and by email before credentials are validated.
