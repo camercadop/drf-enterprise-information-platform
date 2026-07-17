@@ -239,6 +239,18 @@ The access token payload includes:
 
 Downstream views access the user via `request.user` (populated by `JWTAuthentication`). The `tenant_id` claim can be read from the token to scope queries to the active tenant.
 
+## Session Concurrency
+
+Limits the number of active sessions a user can hold simultaneously. When a new login exceeds the limit, the oldest sessions are silently blacklisted to make room.
+
+| Setting | Env var | Default | Description |
+|---------|---------|---------|-------------|
+| `MAX_CONCURRENT_SESSIONS` | `AUTH_MAX_CONCURRENT_SESSIONS` | `0` | Max active sessions per user. `0` = disabled |
+
+Enforcement happens at login time, after the new token is issued, so the incoming session is counted. Pre-blacklisted tokens are excluded from the active count.
+
+Implementation: `_enforce_session_limit()` in `apps/iam_auth/serializers.py`.
+
 ## Configuration
 
 JWT settings are defined in `config/settings/base.py` under `SIMPLE_JWT`. Key values:

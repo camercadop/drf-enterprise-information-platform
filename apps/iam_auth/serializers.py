@@ -2,12 +2,17 @@ import json
 import logging
 from typing import Any
 
+from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
+)
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -47,6 +52,8 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
         data["refresh"] = str(refresh)
         data["access"] = str(refresh.access_token)
 
+        self._enforce_session_limit()
+
         data["user"] = {
             "id": str(self.user.pk),
             "email": self.user.email,
@@ -55,6 +62,38 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
             "tenant_id": resolved_tenant_id,
         }
         return data
+
+    def _enforce_session_limit(self) -> None:
+        """Blacklist oldest sessions when the user exceeds the concurrent session limit.
+
+        Reads MAX_CONCURRENT_SESSIONS from AUTH_SESSION settings. Skips enforcement
+        when the limit is 0. Called after the new token has been issued so the current
+        session is counted and the oldest excess sessions are invalidated.
+
+        Args:
+            None — operates on self.user set by the parent serializer.
+        """
+        limit: int = settings.AUTH_SESSION.get("MAX_CONCURRENT_SESSIONS", 0)
+        if not limit:
+            return
+
+        active_tokens = (
+            OutstandingToken.objects.filter(user=self.user)
+            .exclude(blacklistedtoken__isnull=False)
+            .order_by("created_at")
+        )
+        excess = active_tokens.count() - limit
+        if excess <= 0:
+            return
+
+        oldest = active_tokens[:excess]
+        for token in oldest:
+            BlacklistedToken.objects.get_or_create(token=token)
+        logger.warning(
+            "Session limit enforced: invalidated %s session(s) user_id=%s",
+            excess,
+            self.user.pk,
+        )
 
     def _enforce_ip_policy(self, tenant_id: str) -> None:
         """Block login if the client IP violates the tenant's IP policy.

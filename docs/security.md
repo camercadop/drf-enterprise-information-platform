@@ -337,8 +337,38 @@ Implementation: `apps/iam_auth/ip_filter.py`, `apps/iam_auth/serializers.py`.
 | `POST /api/auth/logout/` | Blacklists the provided refresh token |
 | `POST /api/auth/logout-all/` | Blacklists all outstanding refresh tokens for the user |
 | Token expiry | Access tokens expire naturally after 30 min |
+| Session limit exceeded | Oldest sessions are silently blacklisted at login time |
 
 `logout-all` is useful for "sign out everywhere" or after a password compromise.
+
+### Session Concurrency Control
+
+Limits the number of active sessions a user can hold simultaneously. Enforced at login time — after the new token is issued, the oldest excess sessions are blacklisted. Pre-blacklisted tokens are excluded from the active count.
+
+**Flow:**
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant DB
+
+    Client->>API: POST /api/auth/login/ {email, password}
+    API->>DB: Validate credentials + issue new token
+    API->>DB: Count active (non-blacklisted) tokens for user
+    alt active count > MAX_CONCURRENT_SESSIONS
+        API->>DB: Blacklist oldest excess tokens
+    end
+    API-->>Client: 200 {access, refresh, user}
+```
+
+**Configuration** (`config/settings/base.py` under `AUTH_SESSION`):
+
+| Setting | Env var | Default | Description |
+|---------|---------|---------|-------------|
+| `MAX_CONCURRENT_SESSIONS` | `AUTH_MAX_CONCURRENT_SESSIONS` | `0` | Max active sessions per user. `0` = disabled |
+
+Implementation: `apps/iam_auth/serializers.py`.
 
 ---
 

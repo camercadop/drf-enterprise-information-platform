@@ -200,6 +200,10 @@ AUTH_LOCKOUT = {
     "LOCKOUT_DURATION": env.int("AUTH_LOCKOUT_DURATION", default=900),
 }
 
+AUTH_SESSION = {
+    "MAX_CONCURRENT_SESSIONS": env.int("AUTH_MAX_CONCURRENT_SESSIONS", default=0),
+}
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
         minutes=env.int("ACCESS_TOKEN_LIFETIME_MINUTES", default=30)
