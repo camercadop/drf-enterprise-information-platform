@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import AuthenticationFailed, Throttled
@@ -24,6 +26,8 @@ from .serializers import (
 )
 from .signals import login_failed
 from .throttling import LoginEmailThrottle, LoginIPThrottle
+
+logger = logging.getLogger(__name__)
 
 
 class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
@@ -63,6 +67,7 @@ class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
         email: str = request.data.get("email", "") if isinstance(request.data, dict) else ""
 
         if is_locked(email):
+            logger.warning("Login blocked: account locked email=%s", email)
             raise serializers.ValidationError(
                 {"detail": "Account is locked due to too many failed login attempts."},
                 code="account_locked",
@@ -71,10 +76,12 @@ class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
         try:
             response = super().post(request, *args, **kwargs)
         except AuthenticationFailed:
+            logger.warning("Login failed: invalid credentials email=%s", email)
             login_failed.send(sender=self.__class__, email=email)
             raise
 
         clear_lockout(email)
+        logger.info("Login successful email=%s", email)
         return response
 
 
@@ -95,6 +102,7 @@ class LogoutView(APIView):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        logger.info("Logout email=%s", request.user.email)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -110,6 +118,7 @@ class LogoutAllView(APIView):
         )
         for token in tokens:
             BlacklistedToken.objects.create(token=token)
+        logger.info("Logout all email=%s", request.user.email)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -157,6 +166,7 @@ class UnlockAccountView(APIView):
                 return Response(status=status.HTTP_403_FORBIDDEN)
 
         clear_lockout(email)
+        logger.info("Account unlocked target=%s actor=%s", email, request.user.email)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -175,6 +185,7 @@ class PasswordChangeView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        logger.info("Password changed email=%s", request.user.email)
         # Issue a new token pair so the user stays logged in
         token = AccessToken.for_user(request.user)  # type: ignore[arg-type]
         return Response(

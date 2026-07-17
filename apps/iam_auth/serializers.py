@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any
 
 from django.contrib.auth.hashers import check_password
@@ -18,6 +19,8 @@ from core.utils.security import validate_password_complexity
 from .ip_filter import is_ip_blocked
 from .models import PASSWORD_HISTORY_LIMIT, UserPasswordHistory
 from .signals import password_changed
+
+logger = logging.getLogger(__name__)
 
 
 class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
@@ -80,6 +83,7 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
         blocklist: list[str] = json.loads(raw_blocklist)
 
         if is_ip_blocked(ip, allowlist, blocklist):
+            logger.warning("Login blocked: IP not allowed ip=%s tenant_id=%s", ip, tenant_id)
             exc = PermissionDenied(detail="Login not allowed from this IP address.")
             exc.detail.code = "ip_blocked"  # type: ignore[union-attr]
             raise exc

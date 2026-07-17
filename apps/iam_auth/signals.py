@@ -1,8 +1,12 @@
 """Signals for the iam_auth app."""
 
+import logging
+
 from django.dispatch import Signal, receiver
 
 from .lockout import clear_lockout, record_failed_attempt
+
+logger = logging.getLogger(__name__)
 
 login_failed = Signal()
 # Sent when a login attempt fails due to invalid credentials.
@@ -21,6 +25,7 @@ def handle_login_failed(sender: object, email: str, **kwargs: object) -> None:
         sender: The sender of the signal (unused).
         email: The email address that failed authentication.
     """
+    logger.warning("Failed login attempt recorded email=%s", email)
     record_failed_attempt(email)
 
 
