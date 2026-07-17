@@ -15,9 +15,35 @@ JWT-based authentication with token blacklisting, tenant context, password manag
 
 ## Account Lockout
 
-See [Security — Login Protection](../../docs/security.md#login-protection) for the full lockout design, configuration, and unlock flow.
+Accounts are locked after a configurable number of consecutive failed login attempts. Lockout state is stored in Redis with no DB writes.
+
+| Scope | Default |
+|-------|---------|
+| Max attempts | 5 |
+| Lockout duration | 900 seconds (auto-unlock). Set to `0` for manual unlock only |
+
+When locked, returns `400 Bad Request` with code `account_locked`. Set `MAX_ATTEMPTS` to `0` to disable lockout entirely.
+
+Locked accounts can be manually unlocked via `POST /api/auth/unlock/{email}/` by a tenant admin or superuser.
+
+See [Security — Login Protection](../../docs/security.md#login-protection) for the full flow, Redis key details, and configuration.
 
 Implementation: `apps/iam_auth/lockout.py`, `apps/iam_auth/signals.py`.
+
+## Rate Limiting
+
+Login attempts are throttled independently by IP address and by email before credentials are validated.
+
+| Scope | Default |
+|-------|---------|
+| IP | 10/minute |
+| Email | 5/minute |
+
+When exceeded, returns `429 Too Many Requests` with code `rate_limit_exceeded`. Set a rate to `"0"` to disable that scope.
+
+See [Security — Rate Limiting](../../docs/security.md#rate-limiting) for configuration, flow, and cache key details.
+
+Implementation: `apps/iam_auth/throttling.py`.
 
 ## Login
 
@@ -170,6 +196,7 @@ Beyond login errors (documented above), other endpoints return:
 | Endpoint | Condition | Error |
 |----------|-----------|-------|
 | Login | Account locked | `{"detail": "Account is locked due to too many failed login attempts."}` with code `account_locked` |
+| Login | Rate limit exceeded | `{"detail": "Too many login attempts. Please try again later."}` with code `rate_limit_exceeded` |
 | Unlock | Requester targets their own account | `{"detail": "You cannot unlock your own account."}` with code `self_unlock_forbidden` |
 | Refresh | Expired or blacklisted token | `{"detail": "Token is invalid or expired.", "code": "token_not_valid"}` |
 | Logout | Invalid or expired refresh token | `{"refresh": ["Invalid or expired token."]}` |

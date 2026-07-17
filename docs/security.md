@@ -157,6 +157,55 @@ POST /api/auth/password/change/ {old_password, new_password}
 
 ## Login Protection
 
+### Rate Limiting
+
+Login attempts are throttled independently by IP address and by email to prevent brute force attacks. Throttling is enforced before lockout checks and credential validation. Throttle state is stored in Redis using the default cache backend.
+
+**Redis keys:**
+- `throttle_login_ip_{ip}` — request history for the client IP
+- `throttle_login_email_{email}` — request history for the submitted email
+
+**Flow:**
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant Redis
+
+    Client->>API: POST /api/auth/login/ {email, password}
+    API->>Redis: check throttle_login_ip_{ip}
+    API->>Redis: check throttle_login_email_{email}
+    alt rate limit exceeded
+        API-->>Client: 429 rate_limit_exceeded
+    else within limit
+        API->>Redis: record attempt
+        API->>API: proceed with lockout + credential checks
+        API-->>Client: 200 / 400 / 401
+    end
+```
+
+**Configuration** (`config/settings/base.py` under `AUTH_RATE_LIMIT`):
+
+| Setting | Env var | Default | Description |
+|---------|---------|---------|-------------|
+| `IP_RATE` | `AUTH_RATE_LIMIT_IP` | `10/minute` | Max login attempts per IP. Set to `"0"` to disable |
+| `EMAIL_RATE` | `AUTH_RATE_LIMIT_EMAIL` | `5/minute` | Max login attempts per email. Set to `"0"` to disable |
+
+When a limit is exceeded, the response is `429 Too Many Requests` with error code `rate_limit_exceeded`:
+
+```json
+{
+    "status": "ERROR",
+    "code": "rate_limit_exceeded",
+    "data": {
+        "detail": "Too many login attempts. Please try again later."
+    }
+}
+```
+
+Implementation: `apps/iam_auth/throttling.py`.
+
 ### Account Lockout
 
 Accounts are locked after a configurable number of consecutive failed login attempts. Lockout state is stored in Redis with no DB writes.

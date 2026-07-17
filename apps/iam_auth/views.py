@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, Throttled
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -23,18 +23,33 @@ from .serializers import (
     RefreshSerializer,
 )
 from .signals import login_failed
+from .throttling import LoginEmailThrottle, LoginIPThrottle
 
 
 class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
     """Authenticate user and return JWT token pair.
 
-    Enforces account lockout: rejects login if the account is locked, records
-    failed attempts via the ``login_failed`` signal, and clears lockout state
-    on success.
+    Enforces rate limiting (per IP and per email), account lockout, and
+    failed-attempt tracking. Clears lockout state on successful login.
     """
 
     permission_classes = (AllowAny,)  # type: ignore[assignment]
     serializer_class = LoginSerializer
+    throttle_classes = [LoginIPThrottle, LoginEmailThrottle]
+
+    def throttled(self, request: Request, wait: float) -> None:
+        """Raise a Throttled exception with code ``rate_limit_exceeded``.
+
+        Args:
+            request: The incoming DRF request.
+            wait: Seconds until the next allowed request.
+
+        Raises:
+            Throttled: Always, with ``rate_limit_exceeded`` detail code.
+        """
+        exc = Throttled(detail="Too many login attempts. Please try again later.")
+        exc.detail.code = "rate_limit_exceeded"  # type: ignore[union-attr]
+        raise exc
 
     def post(self, request: Request, *args: object, **kwargs: object) -> Response:
         """Handle login, enforcing lockout checks around the auth flow.

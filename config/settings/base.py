@@ -190,6 +190,11 @@ LOGGING = {
     },
 }
 
+AUTH_RATE_LIMIT = {
+    "IP_RATE": env("AUTH_RATE_LIMIT_IP", default="10/minute"),
+    "EMAIL_RATE": env("AUTH_RATE_LIMIT_EMAIL", default="5/minute"),
+}
+
 AUTH_LOCKOUT = {
     "MAX_ATTEMPTS": env.int("AUTH_LOCKOUT_MAX_ATTEMPTS", default=5),
     "LOCKOUT_DURATION": env.int("AUTH_LOCKOUT_DURATION", default=900),

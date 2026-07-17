@@ -4,6 +4,7 @@ from unittest.mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from apps.iam_auth.throttling import LoginEmailThrottle, LoginIPThrottle
 from apps.iam_auth.views import LoginView
 from apps.iam_users.models import TenantMembership, User
 from tests.base import BaseActionAPITest
@@ -126,3 +127,23 @@ class TestLoginView(BaseActionAPITest):
         )
 
         assert cache.get(f"auth:lockout:attempts:{self.user.email}") is None
+
+    def test_ip_throttle_returns_429(self) -> None:
+        with patch.object(LoginIPThrottle, "allow_request", return_value=False), \
+             patch.object(LoginIPThrottle, "wait", return_value=60.0):
+            response = self.client.post(
+                self.url, {"email": self.user.email, "password": "TestPass123!"}
+            )
+
+        assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+        assert response.data["code"] == "rate_limit_exceeded"
+
+    def test_email_throttle_returns_429(self) -> None:
+        with patch.object(LoginEmailThrottle, "allow_request", return_value=False), \
+             patch.object(LoginEmailThrottle, "wait", return_value=60.0):
+            response = self.client.post(
+                self.url, {"email": self.user.email, "password": "TestPass123!"}
+            )
+
+        assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+        assert response.data["code"] == "rate_limit_exceeded"
