@@ -12,6 +12,7 @@ from typing import Any
 
 import jsonschema
 from django.apps import apps
+from django.core.cache import cache
 
 CATALOG_FILENAME = "tenant_settings.json"
 SCHEMA_PATH = Path(__file__).parent / "catalog_schema.json"
@@ -154,18 +155,16 @@ def validate_all() -> list[str]:
     return all_errors
 
 
-_CATALOG_CACHE: dict[str, dict[str, Any]] | None = None
-# Module-level cache for the merged catalog. Populated on first call and reused
-# for the lifetime of the process. Invalidated only by a server restart.
-# Future optimization: replace with Redis cache to support multi-process invalidation.
+CATALOG_CACHE_KEY = "tenant_settings:merged_catalog"
 
 
 def get_merged_catalog() -> dict[str, dict[str, Any]]:
     """Load and merge all catalogs into a single indexed registry.
 
-    Result is cached at module level after the first call. Private settings
-    are included — callers are responsible for filtering them out when
-    building API responses.
+    Result is cached in Redis after the first call and shared across all
+    workers. Use `invalidate_catalog_cache()` to force a reload, e.g. after
+    deployment. Private settings are included — callers are responsible for
+    filtering them out when building API responses.
 
     Returns:
         Dict mapping setting key to its full definition, e.g.:
@@ -180,13 +179,22 @@ def get_merged_catalog() -> dict[str, dict[str, Any]]:
             },
         }
     """
-    global _CATALOG_CACHE
-    if _CATALOG_CACHE is not None:
-        return _CATALOG_CACHE
+    cached: dict[str, dict[str, Any]] | None = cache.get(CATALOG_CACHE_KEY)
+    if cached is not None:
+        return cached
     merged: dict[str, dict[str, Any]] = {}
     for _app_label, path in discover_catalogs():
         catalog = load_catalog(path)
         for key, definition in catalog.get("settings", {}).items():
             merged[key] = definition
-    _CATALOG_CACHE = merged
-    return _CATALOG_CACHE
+    cache.set(CATALOG_CACHE_KEY, merged, timeout=None)
+    return merged
+
+
+def invalidate_catalog_cache() -> None:
+    """Delete the merged catalog from the cache.
+
+    Forces the next call to `get_merged_catalog()` to rebuild from disk.
+    Call this after deploying changes to any tenant_settings.json file.
+    """
+    cache.delete(CATALOG_CACHE_KEY)

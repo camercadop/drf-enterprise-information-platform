@@ -3,7 +3,10 @@
 from typing import Any
 from unittest.mock import patch
 
+from django.core.cache import cache
+
 from apps.tenant_settings.catalog import (
+    invalidate_catalog_cache,
     validate_type_schema_consistency,
     validate_uniqueness,
 )
@@ -93,10 +96,12 @@ class TestValidateTypeSchemConsistency:
 
 
 class TestGetMergedCatalogCache:
+    def setup_method(self) -> None:
+        cache.clear()
+
     def test_catalog_is_cached_after_first_call(self) -> None:
         import apps.tenant_settings.catalog as catalog_module
 
-        catalog_module._CATALOG_CACHE = None
         with patch.object(
             catalog_module, "discover_catalogs", return_value=[]
         ) as mock_discover:
@@ -107,11 +112,10 @@ class TestGetMergedCatalogCache:
     def test_cache_reset_triggers_reload(self) -> None:
         import apps.tenant_settings.catalog as catalog_module
 
-        catalog_module._CATALOG_CACHE = None
         with patch.object(
             catalog_module, "discover_catalogs", return_value=[]
         ) as mock_discover:
             catalog_module.get_merged_catalog()
-            catalog_module._CATALOG_CACHE = None
+            invalidate_catalog_cache()
             catalog_module.get_merged_catalog()
             assert mock_discover.call_count == 2
