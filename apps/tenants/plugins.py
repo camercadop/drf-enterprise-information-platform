@@ -61,10 +61,14 @@ class TenantInjectionSerializerPlugin(SerializerPlugin):
 
 
 class TenantContextViewSetPlugin(ViewSetPlugin):
-    """Injects tenant_id into serializer context from JWT claims.
+    """Injects tenant_id into serializer context and scopes querysets by tenant.
 
     This makes tenant_id available to serializer-level validators
     (e.g., UniqueTogetherContextValidator) before validation runs.
+
+    on_get_queryset scopes the queryset to the requesting user's tenant.
+    Superusers bypass filtering and receive the full queryset. Returns
+    qs.none() when no tenant context is present for non-superusers.
     """
 
     def on_build_context(self, viewset: Any, context: dict[str, Any]) -> None:
@@ -75,3 +79,24 @@ class TenantContextViewSetPlugin(ViewSetPlugin):
         tenant_id = get_tenant_id(request)
         if tenant_id:
             context["tenant_id"] = tenant_id
+
+    def filter_queryset(
+        self, viewset: Any, qs: models.QuerySet[Any]
+    ) -> models.QuerySet[Any]:
+        """Filter queryset by tenant unless the requesting user is a superuser.
+
+        Args:
+            viewset: The viewset instance handling the request.
+            qs: The base queryset to filter.
+
+        Returns:
+            The original queryset for superusers, a tenant-filtered queryset
+            for tenant users, or qs.none() when no tenant context is present.
+        """
+        request = viewset.request
+        if request.user.is_superuser:
+            return qs
+        tenant_id = get_tenant_id(request)
+        if not tenant_id:
+            return qs.none()
+        return qs.filter(tenant_id=tenant_id)

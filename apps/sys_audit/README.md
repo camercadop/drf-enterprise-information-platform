@@ -30,7 +30,7 @@ graph LR
 | `action` | CharField (free-form) | Operation name (e.g., `create`, `update`, `delete`, `login`, `password_change`, `state_change`) |
 | `target_type` | CharField | Model label (e.g., `tenants.team`) |
 | `target_id` | UUID | PK of the affected resource |
-| `tenant_id` | UUID (nullable) | Tenant boundary context |
+| `tenant` | FK (Tenant, nullable) | Tenant boundary context |
 | `changes` | JSONField | Full payload (create), field diff (update), empty (delete) |
 | `created_at` | DateTimeField | When the operation was recorded |
 
@@ -75,4 +75,4 @@ log_audit(
 
 ## Scope
 
-This module records **state-changing operations** for compliance and incident investigation. It does not cover user activity tracking (page visits, exports, etc.) — that belongs in a separate system module (see open question #5 in `_SCRATCH_DECISIONS.md`).
+This module records **state-changing operations** for compliance and incident investigation. It does not cover user activity tracking — that belongs in `sys_user_event`.

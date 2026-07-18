@@ -12,6 +12,7 @@ class ViewSetPlugin:
     Available hooks:
         on_build_context(viewset, context)
         on_post_destroy(viewset, instance)
+        filter_queryset(viewset, qs) -> QuerySet  # must return the (filtered) queryset
     """
 
 

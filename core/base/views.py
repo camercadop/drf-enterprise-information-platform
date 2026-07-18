@@ -59,7 +59,11 @@ class BaseGenericViewSet(viewsets.GenericViewSet):
         return cls
 
     def get_queryset(self) -> QuerySet[Any]:
-        return self.querysets.get(self.action, super().get_queryset())
+        qs: QuerySet[Any] = self.querysets.get(self.action, super().get_queryset())
+        for plugin in self._get_plugins():
+            if hasattr(plugin, "filter_queryset"):
+                qs = plugin.filter_queryset(self, qs)
+        return qs
 
     def get_serializer(self, *args: Any, **kwargs: Any) -> serializers.Serializer:
         if "data" in kwargs:

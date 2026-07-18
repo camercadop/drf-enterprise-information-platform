@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "apps.sys_audit",
+    "apps.sys_user_event",
     "apps.sys_health",
     "apps.sys_permissions",
     "apps.tenant_settings",
@@ -120,7 +121,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
+        "core.filters.base.SmartFilterBackend",
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
         "core.filters.base.SoftDeleteFilterBackend",
@@ -143,6 +144,8 @@ REST_FRAMEWORK = {
         "apps.sys_audit.plugins.AuditViewSetPlugin",
     ],
 }
+
+VIEWSET_FILTER_MULTI_VALUE_SEPARATOR = env("VIEWSET_FILTER_MULTI_VALUE_SEPARATOR", default=",")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "DRF Enterprise Information Platform",

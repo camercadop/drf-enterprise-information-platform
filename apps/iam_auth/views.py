@@ -14,7 +14,10 @@ from rest_framework_simplejwt.token_blacklist.models import (
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from apps.sys_user_event.models import AuthAttemptLog
+from apps.sys_user_event.services import record_event
 from apps.tenants.utils import get_tenant_id
+from core.utils.request import get_client_ip
 
 from .lockout import clear_lockout, is_locked
 from .serializers import (
@@ -66,8 +69,13 @@ class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
         """
         email: str = request.data.get("email", "") if isinstance(request.data, dict) else ""
 
+        ip: str = get_client_ip(request)
+
         if is_locked(email):
             logger.warning("Login blocked: account locked email=%s", email)
+            AuthAttemptLog.objects.create(
+                email=email, ip_address=ip, success=False, failure_reason="account_locked"
+            )
             raise serializers.ValidationError(
                 {"detail": "Account is locked due to too many failed login attempts."},
                 code="account_locked",
@@ -77,9 +85,20 @@ class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
             response = super().post(request, *args, **kwargs)
         except AuthenticationFailed:
             logger.warning("Login failed: invalid credentials email=%s", email)
+            AuthAttemptLog.objects.create(
+                email=email, ip_address=ip, success=False, failure_reason="invalid_credentials"
+            )
             login_failed.send(sender=self.__class__, email=email)
             raise
 
+        AuthAttemptLog.objects.create(email=email, ip_address=ip, success=True)
+        record_event(
+            actor=request.user,
+            user_email=email,
+            category="auth",
+            event="login",
+            metadata={"ip_address": ip},
+        )
         clear_lockout(email)
         logger.info("Login successful email=%s", email)
         return response
@@ -102,6 +121,12 @@ class LogoutView(APIView):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        record_event(
+            actor=request.user,
+            user_email=request.user.email,
+            category="auth",
+            event="logout",
+        )
         logger.info("Logout email=%s", request.user.email)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -118,6 +143,12 @@ class LogoutAllView(APIView):
         )
         for token in tokens:
             BlacklistedToken.objects.create(token=token)
+        record_event(
+            actor=request.user,
+            user_email=request.user.email,
+            category="auth",
+            event="logout_all",
+        )
         logger.info("Logout all email=%s", request.user.email)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -166,6 +197,13 @@ class UnlockAccountView(APIView):
                 return Response(status=status.HTTP_403_FORBIDDEN)
 
         clear_lockout(email)
+        record_event(
+            actor=request.user,
+            user_email=email,
+            category="auth",
+            event="account_unlocked",
+            metadata={"unlocked_by": request.user.email},
+        )
         logger.info("Account unlocked target=%s actor=%s", email, request.user.email)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -185,6 +223,12 @@ class PasswordChangeView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        record_event(
+            actor=request.user,
+            user_email=request.user.email,
+            category="auth",
+            event="password_change",
+        )
         logger.info("Password changed email=%s", request.user.email)
         # Issue a new token pair so the user stays logged in
         token = AccessToken.for_user(request.user)  # type: ignore[arg-type]

@@ -48,7 +48,13 @@ class AuditLog(models.Model):
     target_id = models.UUIDField()
     # The primary key of the affected resource
 
-    tenant_id = models.UUIDField(null=True, blank=True)
+    tenant = models.ForeignKey(
+        "tenants.Tenant",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="audit_logs",
+    )
     # The tenant boundary context (null for non-tenant-scoped resources)
 
     changes = models.JSONField(default=dict)
@@ -64,7 +70,7 @@ class AuditLog(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(
-                fields=["tenant_id", "created_at"],
+                fields=["tenant", "created_at"],
                 name="idx_audit_tenant_time",
             ),
             models.Index(
