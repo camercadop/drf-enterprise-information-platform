@@ -176,6 +176,35 @@ class TestRepresentInstance:
             ],
         }
 
+    def test_circular_reference_falls_back_with_warning(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        from django.db.models import Model
+
+        field = _make_field(representation_fields=["id", "manager"])
+
+        class FakeUser(Model):
+            fk_representation_fields = ["id", "manager"]
+
+            class Meta:
+                app_label = "tests"
+
+        user = FakeUser.__new__(FakeUser)
+        object.__setattr__(user, "pk", uuid.UUID("00000000-0000-0000-0000-000000000001"))
+        user.id = uuid.UUID("00000000-0000-0000-0000-000000000001")  # type: ignore[attr-defined]
+        # manager points back to itself — circular reference
+        user.manager = user  # type: ignore[attr-defined]
+
+        with caplog.at_level("WARNING"):
+            result = field.to_representation(user)
+
+        assert result["id"] == uuid.UUID("00000000-0000-0000-0000-000000000001")
+        assert result["manager"] == {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "label": str(user),
+        }
+        assert "circular reference" in caplog.text
+
     def test_nested_model_instance_is_represented_recursively(self) -> None:
         from django.db.models import Model
 

@@ -59,7 +59,7 @@ class MembershipCreateSerializer(serializers.Serializer):
 4. Direct `getattr(instance, field_name)`
 5. Returns `None` with a warning log if nothing resolves
 
-If no `representation_fields` are configured at field level, the field checks `fk_representation_fields` as a class attribute on the related model. If neither is set, the fallback is `{"id": str(instance.pk), "label": str(instance)}`. If a resolved value is itself a model instance, it is represented recursively using the same logic. If a resolved value is a `QuerySet` or `list`, each item is represented recursively.
+If no `representation_fields` are configured at field level, the field checks `fk_representation_fields` as a class attribute on the related model. If neither is set, the fallback is `{"id": str(instance.pk), "label": str(instance)}`. If a resolved value is itself a model instance, it is represented recursively using the same logic. If a resolved value is a `QuerySet` or `list`, each item is represented recursively. Circular references are detected and fall back to `{"id": ..., "label": str(instance)}` with a warning log.
 
 ```python
 # Field-level configuration

@@ -58,21 +58,43 @@ class ForeignKeyField(serializers.PrimaryKeyRelatedField):
 
         return queryset
 
-    def _represent_instance(self, instance: Any, fields: list[str] | None) -> dict[str, Any]:
+    def _represent_instance(
+        self,
+        instance: Any,
+        fields: list[str] | None,
+        visited: set[tuple[type, Any]] | None = None,
+    ) -> dict[str, Any]:
         """Build a dict representation for a model instance given an explicit field list.
 
         If ``fields`` is None, falls back to ``{"id": str(instance.pk), "label": str(instance)}``.
         If a resolved value is itself a model instance, it is represented recursively
         using its own ``fk_representation_fields`` class attribute (or the fallback).
+        Circular references are detected via ``visited`` and fall back to the id/label
+        representation with a warning log.
 
         Args:
             instance: The model instance to represent.
             fields: The list of field names to include, or None to use the fallback.
+            visited: Set of (class, pk) pairs already seen in the current recursion chain.
 
         Returns:
             A dict representation of the instance.
         """
         from django.db.models import Model, QuerySet
+
+        if visited is None:
+            visited = set()
+
+        if hasattr(instance, "pk"):
+            identity = (instance.__class__, instance.pk)
+            if identity in visited:
+                logger.warning(
+                    "ForeignKeyField: circular reference detected for %s pk=%s, using fallback",
+                    instance.__class__.__name__,
+                    instance.pk,
+                )
+                return {"id": str(instance.pk), "label": str(instance)}
+            visited = visited | {identity}
 
         if fields is None:
             return {"id": str(instance.pk), "label": str(instance)}
@@ -84,12 +106,13 @@ class ForeignKeyField(serializers.PrimaryKeyRelatedField):
                 nested_fields: list[str] | None = getattr(
                     value.__class__, "fk_representation_fields", None
                 )
-                value = self._represent_instance(value, nested_fields)
+                value = self._represent_instance(value, nested_fields, visited)
             elif isinstance(value, (QuerySet, list)):
                 value = [
                     self._represent_instance(
                         item,
                         getattr(item.__class__, "fk_representation_fields", None),
+                        visited,
                     )
                     if isinstance(item, Model)
                     else item
