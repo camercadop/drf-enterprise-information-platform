@@ -145,6 +145,37 @@ class TestToRepresentation:
 
 
 class TestRepresentInstance:
+    def test_nested_collection_is_represented_as_list(self) -> None:
+        from django.db.models import Model
+
+        field = _make_field(representation_fields=["id", "tags"])
+
+        class FakeTag(Model):
+            fk_representation_fields = ["id", "name"]
+
+            class Meta:
+                app_label = "tests"
+
+        tag1 = FakeTag.__new__(FakeTag)
+        object.__setattr__(tag1, "pk", uuid.UUID("00000000-0000-0000-0000-000000000002"))
+        tag1.id = uuid.UUID("00000000-0000-0000-0000-000000000002")  # type: ignore[attr-defined]
+        tag1.name = "python"  # type: ignore[attr-defined]
+
+        tag2 = FakeTag.__new__(FakeTag)
+        object.__setattr__(tag2, "pk", uuid.UUID("00000000-0000-0000-0000-000000000003"))
+        tag2.id = uuid.UUID("00000000-0000-0000-0000-000000000003")  # type: ignore[attr-defined]
+        tag2.name = "django"  # type: ignore[attr-defined]
+
+        instance = _make_instance(id="abc", tags=[tag1, tag2])
+        result = field.to_representation(instance)
+        assert result == {
+            "id": "abc",
+            "tags": [
+                {"id": uuid.UUID("00000000-0000-0000-0000-000000000002"), "name": "python"},
+                {"id": uuid.UUID("00000000-0000-0000-0000-000000000003"), "name": "django"},
+            ],
+        }
+
     def test_nested_model_instance_is_represented_recursively(self) -> None:
         from django.db.models import Model
 

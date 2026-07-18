@@ -72,7 +72,7 @@ class ForeignKeyField(serializers.PrimaryKeyRelatedField):
         Returns:
             A dict representation of the instance.
         """
-        from django.db.models import Model
+        from django.db.models import Model, QuerySet
 
         if fields is None:
             return {"id": str(instance.pk), "label": str(instance)}
@@ -85,6 +85,16 @@ class ForeignKeyField(serializers.PrimaryKeyRelatedField):
                     value.__class__, "fk_representation_fields", None
                 )
                 value = self._represent_instance(value, nested_fields)
+            elif isinstance(value, (QuerySet, list)):
+                value = [
+                    self._represent_instance(
+                        item,
+                        getattr(item.__class__, "fk_representation_fields", None),
+                    )
+                    if isinstance(item, Model)
+                    else item
+                    for item in value
+                ]
             result[field_name] = value
         return result
 
