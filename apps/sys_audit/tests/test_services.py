@@ -6,6 +6,7 @@ import pytest
 
 from apps.sys_audit.models import AuditLog
 from apps.sys_audit.services import log_audit
+from tests.factories.tenants import TenantFactory
 from tests.factories.users import UserFactory
 
 
@@ -13,6 +14,7 @@ from tests.factories.users import UserFactory
 class TestLogAudit:
     def test_creates_audit_record(self) -> None:
         user = UserFactory()
+        tenant = TenantFactory()
         target_id = uuid.uuid4()
 
         entry = log_audit(
@@ -20,7 +22,7 @@ class TestLogAudit:
             action="create",
             target_type="tenants.team",
             target_id=target_id,
-            tenant_id=uuid.uuid4(),
+            tenant_id=tenant.id,
             changes={"name": "Engineering"},
         )
 
@@ -69,7 +71,8 @@ class TestLogAudit:
 
     def test_accepts_string_tenant_id(self) -> None:
         user = UserFactory()
-        tenant_id = str(uuid.uuid4())
+        tenant = TenantFactory()
+        tenant_id = str(tenant.id)
 
         entry = log_audit(
             actor=user,

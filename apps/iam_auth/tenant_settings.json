@@ -48,6 +48,17 @@
         "type": "array",
         "items": { "type": "string" }
       }
+    },
+    "password_expiry_days": {
+      "label": "Password expiry days",
+      "namespace": "security",
+      "type": "integer",
+      "default": "0",
+      "private": false,
+      "schema": {
+        "type": "integer",
+        "minimum": 0
+      }
     }
   }
 }

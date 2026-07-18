@@ -198,6 +198,23 @@ Example value sent to the API:
 }
 ```
 
+## Password Expiry
+
+Passwords can expire in two ways:
+
+1. Natural expiry — based on the `password_expiry_days` tenant setting. When set to a value greater than `0`, the age of the user's password is checked at login. Age is calculated from the most recent `UserPasswordHistory` entry, or `User.created_at` if the user has never changed their password.
+2. Admin-forced expiry — a tenant admin sets a `password_expires_at` attribute on the user via `UserTenantAttribute` with a past ISO 8601 timestamp. This takes precedence over natural expiry.
+
+When a password is expired, login returns `400 Bad Request` with code `password_expired`. The user must call `POST /api/auth/password/change/` to set a new password, then log in again.
+
+After a successful password change, the `password_expires_at` attribute is automatically deleted.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `password_expiry_days` | integer | `0` | Days before a password expires. `0` = disabled |
+
+Implementation: `_enforce_password_expiry()` in `apps/iam_auth/serializers.py`.
+
 ## Models
 
 - `UserPasswordHistory` — stores hashed passwords per user to enforce reuse prevention.
@@ -226,6 +243,7 @@ Beyond login errors (documented above), other endpoints return:
 | Password change | Complexity failure | `{"new_password": ["Password must be at least 8 characters long.", ...]}` |
 | Password change | History reuse | `{"new_password": ["Cannot reuse any of your last 5 passwords."]}` |
 | Password change | Confirmation mismatch | `{"new_password_confirmation": ["Passwords do not match."]}` |
+| Login | Password expired | `{"detail": "Your password has expired. Please change it to continue."}` with code `password_expired` |
 | Any authenticated endpoint | Missing or invalid access token | `{"detail": "...", "code": "not_authenticated"}` |
 
 ## JWT Claims

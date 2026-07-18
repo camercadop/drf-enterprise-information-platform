@@ -93,7 +93,7 @@ class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
 
         AuthAttemptLog.objects.create(email=email, ip_address=ip, success=True)
         record_event(
-            actor=request.user,
+            actor=None,
             user_email=email,
             category="auth",
             event="login",

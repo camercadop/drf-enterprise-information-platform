@@ -8,6 +8,7 @@ import pytest
 
 from apps.sys_audit.models import AuditLog
 from apps.sys_audit.plugins import AuditSerializerPlugin
+from tests.factories.tenants import TenantFactory
 from tests.factories.users import UserFactory
 
 
@@ -52,7 +53,7 @@ class TestAuditSerializerPluginOnPostCreate:
         serializer = MagicMock()
         request = MagicMock()
         request.user = actor
-        request.auth = {"tenant_id": str(uuid.uuid4())} if actor else None
+        request.auth = {"tenant_id": str(TenantFactory().id)} if actor else None
         serializer.context = {"request": request}
         serializer.Meta.model._meta.label_lower = "tenants.team"
         serializer.to_representation.return_value = representation or {}
@@ -94,7 +95,7 @@ class TestAuditSerializerPluginOnPostUpdate:
         serializer = MagicMock()
         request = MagicMock()
         request.user = actor
-        request.auth = {"tenant_id": str(uuid.uuid4())}
+        request.auth = {"tenant_id": str(TenantFactory().id)}
         serializer.context = {"request": request}
         serializer.Meta.model._meta.label_lower = "tenants.team"
         serializer._validated_data = validated_data or {}
@@ -127,7 +128,7 @@ class TestAuditViewSetPluginOnPostDestroy:
     def _make_viewset(self, actor: Any) -> MagicMock:
         viewset = MagicMock()
         viewset.request.user = actor
-        viewset.request.auth = {"tenant_id": str(uuid.uuid4())}
+        viewset.request.auth = {"tenant_id": str(TenantFactory().id)}
         return viewset
 
     def _make_instance(self) -> MagicMock:

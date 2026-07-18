@@ -1,9 +1,8 @@
 """Platform-level user identity, profiles, and tenant membership."""
 
-from __future__ import annotations
-
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -129,3 +128,54 @@ class TenantMembership(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user.email} @ {self.tenant}"
+
+
+class UserTenantAttribute(models.Model):
+    """Per-user, per-tenant key-value attribute store.
+
+    Stores arbitrary string attributes scoped to a user within a specific tenant.
+    Use this for tenant-specific user state (e.g. password_expires_at) that does
+    not belong on the User model itself. Delete the row to clear an attribute —
+    do not set a sentinel value.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Unique identifier for the attribute entry
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="tenant_attributes",
+    )
+    # The user this attribute belongs to
+
+    tenant = models.ForeignKey(
+        "tenants.Tenant",
+        on_delete=models.CASCADE,
+        related_name="user_attributes",
+    )
+    # The tenant this attribute is scoped to
+
+    attribute = models.CharField(max_length=100)
+    # Free-form attribute name
+
+    value = models.TextField()
+    # Attribute value stored as text
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    # Timestamp when this attribute was set
+
+    class Meta:
+        db_table = "iam_users_tenant_attributes"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "tenant", "attribute"],
+                name="unique_user_tenant_attribute",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"UserTenantAttribute({self.user_id}, {self.tenant_id}, {self.attribute})"
+        )

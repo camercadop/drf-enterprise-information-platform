@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from django.conf import settings
@@ -17,7 +18,8 @@ from rest_framework_simplejwt.token_blacklist.models import (
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.iam_users.models import TenantMembership
-from apps.tenants.utils import get_tenant_setting
+from apps.iam_users.services import delete_attribute, get_attribute
+from apps.tenants.utils import get_tenant_id, get_tenant_setting
 from core.utils.request import get_client_ip
 from core.utils.security import validate_password_complexity
 
@@ -45,6 +47,7 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
         resolved_tenant_id = str(membership.tenant_id)
 
         self._enforce_ip_policy(resolved_tenant_id)
+        self._enforce_password_expiry(membership)
 
         # Generate tokens with tenant_id claim
         refresh = self.get_token(self.user)
@@ -62,6 +65,61 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
             "tenant_id": resolved_tenant_id,
         }
         return data
+
+    def _enforce_password_expiry(self, membership: TenantMembership) -> None:
+        """Raise a validation error if the user's password has expired for this tenant.
+
+        Checks the password_expires_at attribute first (set by admins to force a change).
+        Falls back to natural expiry based on password_expiry_days tenant setting and
+        the most recent UserPasswordHistory entry (or User.created_at if no history exists).
+        Skips enforcement when password_expiry_days is 0.
+
+        Args:
+            membership: The resolved TenantMembership for this login.
+
+        Raises:
+            ValidationError: With code ``password_expired`` when the password has expired.
+        """
+        tenant_id = str(membership.tenant_id)
+
+        forced = get_attribute(self.user, membership.tenant, "password_expires_at")
+        if forced:
+            expires_at = datetime.fromisoformat(forced)
+            if datetime.now(tz=UTC) >= expires_at:
+                logger.warning(
+                    "Login blocked: forced password expiry user_id=%s tenant_id=%s",
+                    self.user.pk,
+                    tenant_id,
+                )
+                raise serializers.ValidationError(
+                    {"detail": "Your password has expired. Please change it to continue."},
+                    code="password_expired",
+                )
+
+        raw_days = get_tenant_setting(tenant_id, "password_expiry_days") or "0"
+        expiry_days = int(raw_days)
+        if not expiry_days:
+            return
+
+        last_change = (
+            UserPasswordHistory.objects.filter(user=self.user)
+            .values_list("created_at", flat=True)
+            .first()
+        )
+        baseline: datetime = last_change if last_change else self.user.created_at
+        age_days = (datetime.now(tz=UTC) - baseline).days
+
+        if age_days >= expiry_days:
+            logger.warning(
+                "Login blocked: password expired user_id=%s tenant_id=%s age_days=%s",
+                self.user.pk,
+                tenant_id,
+                age_days,
+            )
+            raise serializers.ValidationError(
+                {"detail": "Your password has expired. Please change it to continue."},
+                code="password_expired",
+            )
 
     def _enforce_session_limit(self) -> None:
         """Blacklist oldest sessions when the user exceeds the concurrent session limit.
@@ -205,10 +263,6 @@ class PasswordChangeSerializer(serializers.Serializer):  # type: ignore[type-arg
             )
 
         # Load password policy from tenant settings (stored as JSON text)
-        import json
-
-        from apps.tenants.utils import get_tenant_id, get_tenant_setting
-
         config: dict[str, Any] | None = None
         tenant_id = get_tenant_id(self.context["request"])
         if tenant_id:
@@ -237,6 +291,14 @@ class PasswordChangeSerializer(serializers.Serializer):  # type: ignore[type-arg
         UserPasswordHistory.objects.create(user=user, hashed_password=user.password)
         user.set_password(self.validated_data["new_password"])
         user.save(update_fields=["password"])
+
+        tenant_id = get_tenant_id(self.context["request"])
+        if tenant_id:
+            from apps.tenants.models import Tenant
+            tenant = Tenant.objects.filter(pk=tenant_id).first()
+            if tenant:
+                delete_attribute(user, tenant, "password_expires_at")
+
         password_changed.send(sender=self.__class__, email=user.email)
 
 

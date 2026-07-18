@@ -9,8 +9,10 @@ erDiagram
     Tenant ||--o{ TenantSetting : "configured by"
     Tenant ||--o{ TenantRole : "defines"
     Tenant ||--o{ TenantMembership : "has"
+    Tenant ||--o{ UserTenantAttribute : "scopes"
     User ||--o{ TenantMembership : "belongs via"
     User ||--o{ UserPasswordHistory : "tracks"
+    User ||--o{ UserTenantAttribute : "has many"
     TenantRole ||--o{ TenantMembership : "assigned via"
 ```
 
@@ -119,25 +121,38 @@ erDiagram
         DATETIME joined_at
     }
 
+    UserTenantAttribute {
+        UUID id PK
+        UUID user_id FK
+        UUID tenant_id FK
+        VARCHAR attribute
+        TEXT value
+        DATETIME created_at
+    }
+
     User ||--o| UserProfile : "has one"
     User ||--o{ TenantMembership : "has many"
+    User ||--o{ UserTenantAttribute : "has many"
     Tenant ||--o{ TenantMembership : "has many"
+    Tenant ||--o{ UserTenantAttribute : "scopes"
     TenantRole ||--o{ TenantMembership : "assigned via"
 ```
 
-**Tables:** `iam_users`, `iam_users_profiles`, `iam_users_memberships`
+**Tables:** `iam_users`, `iam_users_profiles`, `iam_users_memberships`, `iam_users_tenant_attributes`
 
 **Constraints:**
 
 | Model | Constraint | Fields |
 |-------|-----------|--------|
 | TenantMembership | unique_user_tenant | (user, tenant) |
+| UserTenantAttribute | unique_user_tenant_attribute | (user, tenant, attribute) |
 
 **Design decisions:**
 - `User` exists at the platform level — not scoped to any tenant. A user can belong to multiple tenants.
 - Tenant association is modeled through `TenantMembership`, which assigns exactly one `TenantRole` per membership.
 - `UserProfile` separates mutable personal data from the auth-critical `User` table.
 - `is_admin` on `TenantMembership` provides a fast-path check — admins bypass permission checks entirely.
+- `UserTenantAttribute` stores arbitrary per-user, per-tenant state as text key-value rows. Delete the row to clear an attribute.
 
 ---
 
