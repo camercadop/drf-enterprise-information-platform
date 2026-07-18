@@ -141,6 +141,49 @@ Validated by `core.utils.security.validate_password_complexity`. Rules are tenan
 - New passwords are rejected if they match any of the last 5 entries (`PASSWORD_HISTORY_LIMIT`)
 - After a successful change, a new access token is issued so the user stays authenticated
 
+### Password Expiry
+
+Passwords can expire in two ways:
+
+**Natural expiry** — controlled by the `password_expiry_days` tenant setting. When greater than `0`, the age of the user's password is checked at every login. Age is calculated from the most recent `UserPasswordHistory` entry, or `User.created_at` if the user has never changed their password.
+
+**Admin-forced expiry** — a tenant admin sets a `password_expires_at` attribute on `UserTenantAttribute` with a past ISO 8601 timestamp. This is checked first and takes precedence over natural expiry.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `password_expiry_days` | integer | `0` | Days before a password expires. `0` = disabled |
+
+When expired, login returns `400 Bad Request` with code `password_expired`. The user must change their password via `POST /api/auth/password/change/` before they can log in again. After a successful change, the `password_expires_at` attribute is automatically deleted.
+
+**Flow:**
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant DB
+
+    Client->>API: POST /api/auth/login/ {email, password}
+    API->>DB: Validate credentials + resolve tenant membership
+    API->>DB: Check UserTenantAttribute password_expires_at
+    alt password_expires_at is set and in the past
+        API-->>Client: 400 password_expired
+    else check password_expiry_days setting
+        alt password age >= expiry_days
+            API-->>Client: 400 password_expired
+        else password is valid
+            API-->>Client: 200 {access, refresh, user}
+        end
+    end
+
+    Client->>API: POST /api/auth/password/change/ {old_password, new_password}
+    API->>DB: Change password
+    API->>DB: Delete password_expires_at attribute
+    API-->>Client: 200 {access}
+```
+
+Implementation: `_enforce_password_expiry()` in `apps/iam_auth/serializers.py`, `apps/iam_users/services.py`.
+
 ### Change Flow
 
 ```

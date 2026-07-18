@@ -57,7 +57,7 @@ class AuthAttemptLogViewSet(mixins.ListModelMixin, BaseGenericViewSet):
         "email",
         "ip_address",
         "success",
-        "tenant_id",
+        "tenant",
         "created_at",
     ]
 
