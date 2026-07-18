@@ -45,27 +45,15 @@ class TeamListSerializer(DefaultModelSerializer):
 class TeamMembershipSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """Serializer for listing team memberships."""
 
-    user_id = serializers.UUIDField(source="membership.user_id", read_only=True)
-    email = serializers.EmailField(source="membership.user.email", read_only=True)
-    first_name = serializers.CharField(
-        source="membership.user.first_name", read_only=True
-    )
-    last_name = serializers.CharField(
-        source="membership.user.last_name", read_only=True
-    )
-    team_name = serializers.CharField(source="team.name", read_only=True)
+    team = ForeignKeyField(read_only=True)
+    membership = ForeignKeyField(read_only=True, representation_fields=["id", "user"])
 
     class Meta:
         model = TeamMembership
         fields = [
             "id",
             "team",
-            "team_name",
             "membership",
-            "user_id",
-            "email",
-            "first_name",
-            "last_name",
             "created_at",
         ]
 

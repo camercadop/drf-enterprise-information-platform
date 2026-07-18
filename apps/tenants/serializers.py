@@ -39,21 +39,15 @@ class TenantListSerializer(serializers.ModelSerializer):  # type: ignore[type-ar
 class MembershipListSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """Serializer for listing tenant memberships."""
 
-    email = serializers.EmailField(source="user.email", read_only=True)
-    first_name = serializers.CharField(source="user.first_name", read_only=True)
-    last_name = serializers.CharField(source="user.last_name", read_only=True)
-    role_name = serializers.CharField(source="role.name", read_only=True)
+    user = ForeignKeyField(read_only=True)
+    role = ForeignKeyField(read_only=True)
 
     class Meta:
         model = TenantMembership
         fields = [
             "id",
             "user",
-            "email",
-            "first_name",
-            "last_name",
             "role",
-            "role_name",
             "is_admin",
             "is_active",
             "joined_at",

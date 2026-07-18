@@ -50,4 +50,4 @@ class TenantRole(TenantAwareModel):
         ]
 
     def __str__(self) -> str:
-        return f"{self.name} ({self.tenant})"
+        return str(self.name)

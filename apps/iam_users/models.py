@@ -62,6 +62,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: list[str] = []
 
+    fk_representation_fields = ["id", "email", "first_name", "last_name"]
+
     class Meta:
         db_table = "iam_users"
         ordering = ["-created_at"]
