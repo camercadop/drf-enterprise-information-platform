@@ -44,6 +44,9 @@ jobs:
 
       - run: uv sync
 
+      - name: Security audit
+        run: uv audit
+
       - name: Lint
         run: uv run ruff check .
 

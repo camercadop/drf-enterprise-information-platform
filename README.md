@@ -1,6 +1,11 @@
 # DRF Enterprise Information Platform
 
 [![CI](https://github.com/camercadop/drf-enterprise-information-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/camercadop/drf-enterprise-information-platform/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.14-blue)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/django-6-green)](https://www.djangoproject.com/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
 
 Multi-tenant enterprise platform built with Django REST Framework. Provides tenant isolation, audit trails, JWT authentication, and role-based access control out of the box. Designed as a modular monolith with convention-over-configuration defaults, a plugin-based extensibility model, and security-first design — so domain teams can focus on business logic instead of reinventing infrastructure.
 
