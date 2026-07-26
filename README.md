@@ -9,11 +9,21 @@
 
 Multi-tenant enterprise platform built with Django REST Framework. Provides tenant isolation, audit trails, JWT authentication, and role-based access control out of the box. Designed as a modular monolith with convention-over-configuration defaults, a plugin-based extensibility model, and security-first design — so domain teams can focus on business logic instead of reinventing infrastructure.
 
+[Read the full vision and strategy](docs/vision.md)
+
 ## Why This Exists
 
 Enterprise applications share recurring infrastructure challenges: tenant isolation, consistent API contracts, audit trails, and authentication that scales across organizations. Building these from scratch for each project leads to inconsistent implementations, security gaps, and duplicated effort.
 
 This platform solves these problems once — so domain teams can focus on business logic instead of reinventing infrastructure.
+
+## Target Audience
+
+- Development teams building internal enterprise tools, B2B SaaS backends, or multi-organization platforms
+- Platform engineers who need a well-structured backend with clear extension points
+- System integrators connecting enterprise systems through a unified API layer
+- SaaS developers who need multi-tenant infrastructure without building it from scratch
+- Organizations that require tenant-scoped data, role-based access, and audit trails without building custom infrastructure
 
 ## Tech Stack
 
@@ -50,6 +60,29 @@ This platform solves these problems once — so domain teams can focus on busine
 - **JWT authentication** — short-lived access tokens, rotating refresh tokens, tenant context in claims
 - **IP filtering & lockout** — per-tenant IP allowlisting and brute-force lockout
 - **Health check** — unauthenticated endpoint for infrastructure monitoring
+
+## Extended Capabilities
+
+Beyond core functionality, the platform includes comprehensive enterprise features:
+
+- **Identity Management** — Teams, MFA, authentication auditing
+- **API Management** — Registry, versioning, rate limiting, webhooks, analytics
+- **Event Platform** — Domain events, Redis-based event bus, retry mechanisms
+- **Background Processing** — Celery tasks, scheduling, monitoring
+- **Data Management** — Import/export, validation, transformations, bulk jobs
+- **Audit & Governance** — Comprehensive audit logs, change history, data retention
+- **Notifications** — Email, webhooks, and roadmap channels (WhatsApp, Slack, Teams)
+- **Search Extensions** — Dataset search, indexing, ranking capabilities
+
+## Platform Roadmap
+
+The platform evolves through structured phases:
+
+- **Phase 1 — Foundation** — Core architecture, authentication, users, documents
+- **Phase 2 — Enterprise Features** — Document lifecycle, advanced search, security
+- **Phase 3 — Enterprise Platform** — Integrations, operations, observability
+
+[View detailed roadmap](ROADMAP.md)
 
 ## Project Structure
 
@@ -149,6 +182,7 @@ GitHub Actions runs on every push to `main`/`dev` and PRs targeting either branc
 - [Continuous Integration](docs/ci.md)
 - [Architecture Decision Records](docs/adr/README.md)
 - [Development Guidelines](docs/guidelines/README.md)
+- [Platform Roadmap](ROADMAP.md)
 
 ## Contributing
 

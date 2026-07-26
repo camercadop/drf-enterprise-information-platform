@@ -2,7 +2,13 @@
 
 ## Purpose
 
-The DRF Enterprise Information Platform is a multi-tenant enterprise backend designed to serve as the foundation for business applications that require strict data isolation, auditable operations, and extensible domain logic. It solves recurring infrastructure concerns at the framework level — so domain teams can focus on business logic.
+The Enterprise Information Platform (EIP) is a modular backend platform designed to become the **System of Record** for enterprise applications.
+
+Its purpose is to provide a secure, scalable, and extensible foundation for managing enterprise information, documents, users, permissions, metadata, and business processes through modern APIs.
+
+Unlike traditional document management systems, EIP is designed as a headless platform that can power multiple applications while exposing its capabilities through REST APIs and domain events.
+
+It is intentionally AI-agnostic. Its responsibility is to manage and govern enterprise information—not to interpret it.
 
 Enterprise applications share a recurring set of infrastructure challenges:
 
@@ -13,6 +19,66 @@ Enterprise applications share a recurring set of infrastructure challenges:
 - A codebase structure that supports team autonomy without architectural drift
 
 Building these from scratch for each project leads to inconsistent implementations, security gaps, and duplicated effort. This platform solves these problems once, correctly, and provides a foundation that domain modules inherit from.
+
+## Product Goals
+
+- Provide a reusable enterprise backend platform.
+- Centralize enterprise information.
+- Support secure multi-tenant deployments.
+- Offer enterprise-grade authentication and authorization.
+- Enable document lifecycle management.
+- Publish APIs and events for integration.
+- Remain independent from AI technologies.
+- Serve as the foundation for future enterprise solutions.
+
+## Non Goals
+
+The platform is **not** intended to:
+
+- Execute LLMs
+- Generate embeddings
+- Perform semantic search
+- Provide conversational AI
+- Implement Retrieval Augmented Generation (RAG)
+
+Those capabilities belong to external AI platforms.
+
+## Core Capabilities
+
+### Identity & Access
+
+- User Management
+- JWT Authentication
+- Refresh Tokens
+- API Keys
+- OAuth2
+- RBAC
+- ABAC
+
+### Information Management
+
+- Document Management
+- Metadata
+- Categories
+- Tags
+- Attachments
+- Search
+- Versioning
+
+### Business Processes
+
+- Approval Workflows
+- Document Lifecycle
+- Scheduled Jobs
+- Notifications
+- Audit Trail
+
+### Multi-Tenancy
+
+- Tenant Isolation
+- Tenant Administration
+- Tenant Configuration
+
 
 ### Target Audience
 
@@ -143,6 +209,98 @@ The platform grows by adding new domain modules to `apps/`. Each module inherits
 - `core/` base classes are the stable API that modules depend on
 - Breaking changes to `core/` require an ADR and coordinated migration across all modules
 - Domain modules may evolve independently as long as they respect the foundation's contracts
+
+## Design Principles
+
+- API First — APIs are the primary interface; all capabilities are exposed through REST APIs
+- Modular Monolith — independently deployable modules, evolvable toward microservices
+- Event-Driven — domain events for cross-module communication where it adds value
+- Security by Default — authentication, authorization, and audit enforced at the platform level
+- Observability from Day One — structured logging, metrics, and tracing built in from the start
+- Test Automation — automated testing at all layers as a non-negotiable practice
+- Reproducible Infrastructure — Docker-based environments for consistent local and CI execution
+
+## Multi-Tenancy Strategy
+
+Strategy: shared database with Tenant FK filtering.
+
+Every resource belongs to a Tenant. All queries are filtered by the `tenant_id` of the authenticated user. Schema-per-tenant and database-per-tenant approaches are explicitly out of scope.
+
+## Extended Capabilities
+
+These domains complement the core capabilities and are part of the platform roadmap.
+
+### Identity Additions
+
+- Teams
+- MFA (roadmap)
+- Authentication Auditing
+
+### API Management
+
+Manages platform API consumption.
+
+- API Registry
+- API Versioning
+- API Keys
+- OAuth2 (roadmap)
+- Rate Limiting
+- Quotas
+- Webhooks
+- OpenAPI
+- Analytics
+- SDK Generation (roadmap)
+
+### Event Platform
+
+Handles cross-module communication.
+
+- Domain Events
+- Event Bus (Redis-based)
+- Retry
+- Dead Letter Queue
+- Idempotency
+- Event Replay (roadmap)
+
+Rationale: all domain modules depend on events and async processing. Building this before domain modules avoids retrofitting.
+
+### Background Processing
+
+Handles asynchronous workloads.
+
+- Celery
+- Redis
+- Schedulers
+- Jobs
+- Retries
+- Priorities
+- Task Monitoring
+
+Rationale: same as Event Platform — must exist before domain modules that require async processing.
+
+### Data Management
+
+Manages structured data ingestion and export.
+
+- CSV Import
+- Excel Import
+- Export
+- Validation
+- Transformations
+- Schema Versioning
+- Data Quality
+- Dataset Catalog
+- Bulk Jobs
+
+### Audit & Governance
+
+- Audit Logs
+- Change History
+- Soft Delete
+- Data Retention
+- Activity Logs
+
+
 
 ## Non Goals
 
