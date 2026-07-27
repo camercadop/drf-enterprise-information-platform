@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.iam_roles",
     "apps.iam_users",
     "apps.iam_auth",
+    "apps.dms_document_types",
 ]
 
 AUTH_USER_MODEL = "iam_users.User"
@@ -145,7 +146,9 @@ REST_FRAMEWORK = {
     ],
 }
 
-VIEWSET_FILTER_MULTI_VALUE_SEPARATOR = env("VIEWSET_FILTER_MULTI_VALUE_SEPARATOR", default=",")
+VIEWSET_FILTER_MULTI_VALUE_SEPARATOR = env(
+    "VIEWSET_FILTER_MULTI_VALUE_SEPARATOR", default=","
+)
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "DRF Enterprise Information Platform",
