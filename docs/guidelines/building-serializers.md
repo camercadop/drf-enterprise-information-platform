@@ -55,7 +55,6 @@ class InvoiceSerializer(DefaultModelSerializer):
     class Meta:
         model = Invoice
         fields = ["id", "number", "amount", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
 ```
 
 Use `BaseSerializer` for platform-level models (no soft-delete representation):
@@ -70,7 +69,6 @@ class TenantSerializer(BaseSerializer):
     class Meta:
         model = Tenant
         fields = ["id", "name", "code", "is_active", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
 ```
 
 Use plain `serializers.Serializer` for non-model operations:
@@ -146,7 +144,6 @@ class InvitationSerializer(DefaultModelSerializer):
     class Meta:
         model = Invitation
         fields = ["id", "email", "token", "created_at"]
-        read_only_fields = ["id", "token", "created_at"]
 
     def pre_create(self, validated_data: dict) -> None:
         validated_data["token"] = generate_token()
@@ -343,12 +340,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "email", "password", "first_name", "created_at"]
-        read_only_fields = ["id", "created_at"]             # Bulk read-only via Meta
+        read_only_fields = ["email"]                        # Only for fields not covered by NonEditableFieldsSerializerPlugin
 ```
+
+`NonEditableFieldsSerializerPlugin` automatically marks fields read-only when the model field has `primary_key=True`, `editable=False`, `auto_now=True`, or `auto_now_add=True`. Do not add those fields to `read_only_fields` — it is redundant.
 
 | Mechanism | Use When |
 |-----------|----------|
-| `Meta.read_only_fields` | Multiple model fields that are always read-only (timestamps, IDs) |
+| `Meta.read_only_fields` | Fields that must be read-only but are not covered by `NonEditableFieldsSerializerPlugin` |
 | `read_only=True` on field | Computed/derived fields declared explicitly on the serializer |
 | `write_only=True` on field | Sensitive input that should never appear in responses (passwords, tokens) |
 
@@ -426,7 +425,6 @@ class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
         fields = ["id", "tenant", "name", "description", "is_active", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
 ```
 
 List serializers omit expensive nested data and write-only fields. They can use `serializers.ModelSerializer` directly when they don't need lifecycle hooks or plugins.

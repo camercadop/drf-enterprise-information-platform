@@ -95,6 +95,13 @@ class BaseGenericViewSet(viewsets.GenericViewSet):
 
     def clean_create_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Prepare raw request data before serializer instantiation on create."""
+        if hasattr(self, "parent_lookup_fields") and self.parent_lookup_fields:
+            extra = {
+                (url_kwarg.removesuffix("_id") if url_kwarg.endswith("_id") else url_kwarg): self.kwargs[url_kwarg]
+                for url_kwarg in self.parent_lookup_fields
+                if url_kwarg in self.kwargs
+            }
+            return {**data, **extra}
         return data
 
     def clean_update_data(self, data: dict[str, Any]) -> dict[str, Any]:

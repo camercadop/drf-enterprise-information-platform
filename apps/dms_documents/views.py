@@ -13,5 +13,3 @@ class DocumentViewSet(BaseViewSet):
     search_fields = ["title", "description"]
     ordering_fields = ["title", "created_at"]
     ordering = ["-created_at"]
-
-    parent_lookup_fields = {"document_id": "document_id"}

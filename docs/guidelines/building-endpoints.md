@@ -221,6 +221,39 @@ urlpatterns = [
 ]
 ```
 
+### Nested Resources
+
+For resources that belong to a parent (e.g., items under an order), nest the child URLs inside the parent's `urls.py` using a plain `path` with a captured parent PK:
+
+```python
+# apps/orders/urls.py
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+from .views import OrderViewSet
+
+app_name = "orders"
+
+router = DefaultRouter()
+router.register("", OrderViewSet, basename="order")
+
+urlpatterns = router.urls + [
+    path("<uuid:order_id>/items/", include("apps.order_items.urls")),
+]
+```
+
+The child viewset declares `parent_lookup_fields` to filter its queryset by the captured kwarg:
+
+```python
+# apps/order_items/views.py
+class OrderItemViewSet(mixins.CreateModelMixin, BaseReadOnlyViewSet):
+    queryset = OrderItem.objects.all()
+    parent_lookup_fields = {"order_id": "order_id"}  # {url_kwarg: model_field}
+```
+
+The base `get_queryset` automatically applies `.filter(order_id=<value>)` from the URL kwargs. On create, `clean_create_data` injects the parent FK into the payload by stripping the `_id` suffix from the URL kwarg to derive the serializer field name (`order_id` → `order`). No override needed in the child viewset.
+
+No third-party package is required — this is plain Django URL routing.
+
 ---
 
 ## Overriding get_queryset
@@ -449,7 +482,9 @@ class MembershipViewSet(BaseViewSet):
 |----------|-----|
 | Standard CRUD on a model | `BaseViewSet` |
 | Read-only resource | `BaseReadOnlyViewSet` |
+| Immutable resource (create + read, no update/delete) | `mixins.CreateModelMixin` + `BaseReadOnlyViewSet` |
 | Subset of actions (e.g., list + create + delete) | `BaseGenericViewSet` + DRF mixins |
+| Resource nested under a parent | Nested `path` in parent `urls.py` + `parent_lookup_fields` on child viewset |
 | Single POST action (login, webhook) | `APIView` |
 | Wrapping a library view (simplejwt, etc.) | Inherit from the library view directly |
 | Extra action on a resource (activate, deactivate) | `@action` on the ViewSet |

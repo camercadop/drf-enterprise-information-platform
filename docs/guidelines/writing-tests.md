@@ -11,6 +11,7 @@ Tests live next to the code they test (`apps/<app>/tests/`). Shared infrastructu
 ```
 tests/
   base.py              # Base test classes (smoke + functional)
+  serializer_utils.py  # Helpers for serializer unit tests
   factories/           # Factory Boy factories, one file per app
   fixtures/            # Shared pytest fixtures, one file per domain
   conftest.py          # Wires fixture modules via pytest_plugins
@@ -107,6 +108,69 @@ class TestTenantReadOnly(BaseListAPITest, BaseRetrieveAPITest):
     def create_instance(self):
         return TenantFactory()
 ```
+
+### Nested Resources
+
+For viewsets mounted under a parent URL (e.g., `/api/orders/{order_id}/items/`), override the smoke tests and functional tests to build the URL dynamically from a parent instance. Use `BaseCreateAPITest`, `BaseRetrieveAPITest`, and `BaseListAPITest` directly instead of `BaseCRUDAPITest`:
+
+```python
+import uuid
+from typing import Any
+
+from tests.base import BaseCreateAPITest, BaseListAPITest, BaseRetrieveAPITest
+
+
+class TestOrderItemViewSet(BaseCreateAPITest, BaseRetrieveAPITest, BaseListAPITest):
+    url = "/api/orders/{order_id}/items/"
+
+    def _make_parent(self) -> Order:
+        # Create and return the parent instance
+        ...
+
+    def _nested_url(self, parent) -> str:
+        return self.url.format(order_id=parent.pk)
+
+    def create_instance(self):
+        parent = self._make_parent()
+        return Item.objects.create(order=parent, ...)
+
+    def detail_url(self, instance) -> str:
+        return f"{self._nested_url(instance.order)}{instance.pk}/"
+
+    # Override smoke tests to use a valid nested URL
+    def test_smoke_create(self) -> None:
+        response = self.client.post(self._nested_url(self._make_parent()))
+        assert response.status_code // 100 in (2, 4)
+
+    def test_smoke_list(self) -> None:
+        response = self.client.get(self._nested_url(self._make_parent()))
+        assert response.status_code // 100 in (2, 4)
+
+    def test_smoke_retrieve(self) -> None:
+        response = self.client.get(f"{self._nested_url(self._make_parent())}{uuid.uuid4()}/")
+        assert response.status_code // 100 in (2, 4)
+
+    # valid_payloads returns (url, payload) tuples for nested resources
+    def valid_payloads(self):
+        parent = self._make_parent()
+        url = self._nested_url(parent)
+        return [
+            (url, {"name": "Item A"}),
+        ]
+
+    def test_create_valid(self, subtests: Any) -> None:
+        for url, payload in self.valid_payloads():
+            with subtests.test(payload=payload):
+                response = self.client.post(url, payload, format="json")
+                assert response.status_code // 100 == 2
+```
+
+Key rules for nested resource tests:
+
+- Use `get_or_create` (not `create`) for shared parent dependencies to avoid unique constraint violations across test methods
+- Use a unique name per `_make_parent()` call (e.g., `f"Order {Model.objects.count()}"`) to avoid uniqueness conflicts
+- `valid_payloads` returns `(url, payload)` tuples instead of plain dicts, since each payload may target a different parent URL
+- Do not include `parent_lookup_fields`-injected fields (e.g., `order`) in payloads — the base viewset injects them automatically from the URL kwargs
 
 ### Single Action Endpoint
 
@@ -308,6 +372,37 @@ For error responses (4xx), the exception handler mutates `response.data` directl
 
 ---
 
+## Serializer Unit Tests with Tenant Context
+
+When testing serializer logic (e.g., `pre_create` hooks) that relies on global plugins reading `tenant_id` from JWT claims or `request.user`, use `make_serializer_with_tenant_context` from `tests.serializer_utils` instead of building the request manually.
+
+```python
+import pytest
+
+from apps.invoices.serializers import InvoiceSerializer
+from apps.invoices.models import Invoice
+from tests.factories.invoices import InvoiceFactory
+from tests.serializer_utils import make_serializer_with_tenant_context
+
+
+@pytest.mark.django_db
+class TestInvoiceSerializerPreCreate:
+    def test_number_is_auto_assigned(self, membership, user) -> None:
+        serializer = make_serializer_with_tenant_context(
+            InvoiceSerializer,
+            {"amount": "100.00"},
+            membership,
+            user,
+        )
+        assert serializer.is_valid(), serializer.errors
+        instance = serializer.save()
+        assert instance.number is not None
+```
+
+This helper builds a proper DRF `Request` via `APIRequestFactory` and sets `auth` and `user` so both `TenantInjectionSerializerPlugin` and the audit plugin work correctly.
+
+---
+
 ## Asserting 400 Responses in Standalone Tests
 
 When writing `@pytest.mark.django_db` tests outside `BaseCRUDAPITest`, always assert beyond the status code. A bare `assert response.status_code == 400` passes for any validation failure — including ones caused by unrelated bugs.
@@ -367,8 +462,9 @@ assert "permissions" in response.data["data"]
 | Permission class logic | Unit test with mocked request |
 | Full CRUD viewset | `BaseCRUDAPITest` |
 | Read-only viewset | `BaseListAPITest` + `BaseRetrieveAPITest` |
+| Nested resource viewset | `BaseCreateAPITest` + `BaseRetrieveAPITest` + `BaseListAPITest` with dynamic URL |
 | Single action (login, logout) | `BaseActionAPITest` |
 | Unauthenticated endpoint | Override `_setup_base` with `api_client` |
 | Custom viewset action | Separate `BaseActionAPITest` with dynamic URL |
-| Serializer validation logic | Unit test calling `serializer.is_valid()` directly |
+| Serializer validation logic | Unit test calling `serializer.is_valid()` directly — use `make_serializer_with_tenant_context` from `tests.serializer_utils` |
 | Plugin behavior | Unit test with a minimal serializer instance |
