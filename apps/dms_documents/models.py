@@ -34,14 +34,13 @@ class Document(TenantAwareModel):
     # Long-form description of the document
 
     class Availability(models.TextChoices):
-        DRAFT = "DRAFT", "Draft"
         ACTIVE = "ACTIVE", "Active"
         ARCHIVED = "ARCHIVED", "Archived"
 
     availability = models.CharField(
         max_length=20,
         choices=Availability.choices,
-        default=Availability.DRAFT,
+        default=Availability.ACTIVE,
     )
     # Lifecycle state of the document
 

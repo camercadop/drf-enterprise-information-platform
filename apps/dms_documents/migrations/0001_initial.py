@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('deleted_by', models.CharField(blank=True, max_length=255, null=True)),
                 ('title', models.CharField(max_length=255)),
                 ('description', models.TextField(blank=True, null=True)),
-                ('availability', models.CharField(choices=[('DRAFT', 'Draft'), ('ACTIVE', 'Active'), ('ARCHIVED', 'Archived')], default='DRAFT', max_length=20)),
+                ('availability', models.CharField(choices=[('ACTIVE', 'Active'), ('ARCHIVED', 'Archived')], default='ACTIVE', max_length=20)),
                 ('archived_at', models.DateTimeField(blank=True, null=True)),
                 ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
                 ('document_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='dms_document_types.documenttype')),
