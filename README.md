@@ -87,11 +87,11 @@ The platform evolves through structured phases:
 ## Project Structure
 
 ```
-apps/           # Domain modules (iam_auth, iam_roles, iam_users, tenants)
-core/           # Framework foundations (base classes, utils, shared infrastructure)
-config/         # Django settings, URLs, ASGI/WSGI
-docs/           # Documentation
-tests/          # Test suite
+apps/               # Domain modules
+core/               # Framework foundations (base classes, utils, shared infrastructure)
+config/             # Django settings, URLs, ASGI/WSGI
+docs/               # Documentation
+tests/              # Test suite
 ```
 
 ## Architecture Overview

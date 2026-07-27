@@ -35,6 +35,7 @@ Provides base classes that all domain modules inherit from. This layer defines:
 - **Permissions** — Tenant-aware permission classes
 - **Pagination** — Configurable pagination strategies
 - **Filters** — Base filter classes with common fields
+- **Celery** — Custom `TaskResultBackend` with Postgres UUID primary keys and `async_tasks` schema isolation
 
 ### apps/ — Domain Modules
 
@@ -83,6 +84,18 @@ Two complementary patterns for extending behavior:
 
 Both plugin settings live inside the `REST_FRAMEWORK` configuration dict.
 
+
+## Background Processing
+
+Celery is used for asynchronous task execution with Redis as the broker.
+
+- Broker: Redis (database 1, separate from the cache on database 0)
+- Result backend: PostgreSQL via SQLAlchemy, stored in the `async_tasks` schema
+- Task results use Postgres-generated UUID primary keys (`gen_random_uuid()`)
+- Results include a `created_at` timestamp set by the database at insert time
+- In tests, `CELERY_TASK_ALWAYS_EAGER = True` runs tasks synchronously — no worker required
+
+The custom backend lives in `core/celery/backend.py` and is wired in `config/celery.py`.
 
 ## Business Logic Layer
 

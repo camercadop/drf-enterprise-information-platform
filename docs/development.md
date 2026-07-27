@@ -21,11 +21,22 @@ docker compose up -d
 # Install dependencies
 uv sync
 
+# Create the async_tasks schema (required for Celery result backend)
+psql $DATABASE_URL -f scripts/postgres/init.sql
+
 # Run migrations
 uv run python manage.py migrate
 
 # Start development server
 uv run python manage.py runserver
+```
+
+## Running the Celery Worker
+
+In a separate terminal:
+
+```bash
+uv run celery -A config worker --loglevel=info
 ```
 
 ## Project Structure

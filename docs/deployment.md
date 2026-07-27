@@ -13,6 +13,8 @@ How to run the platform in production — environment configuration, infrastruct
 | `SECRET_KEY` | Django secret key | `<secret_key>` |
 | `DATABASE_URL` | PostgreSQL connection string | `postgres://user:pass@host:5432/dbname` |
 | `REDIS_URL` | Redis connection string | `redis://host:6379/0` |
+| `CELERY_BROKER_URL` | Celery broker connection string | `redis://host:6379/1` |
+| `CELERY_RESULT_BACKEND` | Celery result backend connection string | `db+postgresql://user:pass@host:5432/dbname?options=-csearch_path%3Dasync_tasks` |
 | `ALLOWED_HOSTS` | Comma-separated list of allowed hostnames | `api.example.com` |
 
 ### Optional
@@ -34,8 +36,8 @@ How to run the platform in production — environment configuration, infrastruct
 
 | Service | Version | Notes |
 |---------|---------|-------|
-| PostgreSQL | 16+ | Primary database |
-| Redis | 7+ | Cache and token blacklist backend |
+| PostgreSQL | 16+ | Primary database and Celery result backend (`async_tasks` schema) |
+| Redis | 7+ | Cache, token blacklist backend, and Celery broker |
 | Python | 3.14+ | Application runtime |
 
 ### Minimum Resources (per instance)
@@ -78,13 +80,13 @@ The project includes a multi-stage Dockerfile optimized for production:
 
 ```bash
 # Build and run
-docker compose up -d   # Starts PostgreSQL, Redis, and the app
+docker compose up -d   # Starts PostgreSQL, Redis, the app, and the Celery worker
 
 # Build image standalone
 docker build -t eip:latest .
 ```
 
-The app service uses Gunicorn bound to port 8000. Static files are collected at build time.
+The app service uses Gunicorn bound to port 8000. The Celery worker uses the same image with a different entrypoint (`celery -A config worker`). Static files are collected at build time.
 
 ---
 
@@ -136,4 +138,5 @@ Configure orchestrator probes to use these paths (e.g., Kubernetes `livenessProb
 - The application is stateless — scale horizontally by adding instances
 - Session state lives in JWT tokens (no sticky sessions required)
 - Database connection pooling (PgBouncer) recommended at 10+ instances
-- Redis is used for cache and token blacklist — single instance sufficient for moderate load
+- Redis is used for cache, token blacklist, and Celery broker — single instance sufficient for moderate load
+- Celery workers scale independently from the web application — add worker instances as task volume grows

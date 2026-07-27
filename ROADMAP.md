@@ -28,7 +28,7 @@
 
 - ✅ PostgreSQL
 - ✅ Redis
-- Celery
+- ✅ Celery
 - ✅ Docker
 
 ---
@@ -37,7 +37,7 @@
 
 ### Document Lifecycle
 
-- Versioning
+- ✅ Versioning
 - Approval Workflow
 - ✅ Soft Delete
 - Retention Policies
