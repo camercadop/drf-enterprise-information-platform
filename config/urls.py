@@ -14,9 +14,10 @@ urlpatterns = [
     path("api/sys/", include("apps.sys_user_event.urls")),
     path("api/tenants/", include("apps.tenants.urls")),
     path("api/tenant-settings/", include("apps.tenant_settings.urls")),
-    path("api/teams/", include("apps.iam_teams.urls")),
-    path("api/roles/", include("apps.iam_roles.urls")),
-    path("api/users/", include("apps.iam_users.urls")),
+    path("api/iam/teams/", include("apps.iam_teams.urls")),
+    path("api/iam/roles/", include("apps.iam_roles.urls")),
+    path("api/iam/users/", include("apps.iam_users.urls")),
+    path("api/dms/document-types/", include("apps.dms_document_types.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/schema/swagger-ui/",

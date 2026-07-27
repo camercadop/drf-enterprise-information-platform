@@ -1,7 +1,5 @@
 """Tests for TeamMembership endpoints."""
 
-from typing import Any
-
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -16,7 +14,7 @@ from tests.factories.tenants import TenantMembershipFactory as MembershipFactory
 class TestTeamMembershipList:
     """Tests for GET /api/teams/memberships/."""
 
-    url = "/api/teams/memberships/"
+    url = "/api/iam/teams/memberships/"
 
     def test_list_returns_memberships_in_tenant(
         self, auth_client: APIClient, membership: TenantMembership
@@ -43,7 +41,7 @@ class TestTeamMembershipList:
 class TestTeamMembershipCreate:
     """Tests for POST /api/teams/memberships/."""
 
-    url = "/api/teams/memberships/"
+    url = "/api/iam/teams/memberships/"
 
     def test_add_member_to_team(
         self,
@@ -111,7 +109,7 @@ class TestTeamMembershipCreate:
 class TestTeamMembershipDelete:
     """Tests for DELETE /api/teams/memberships/{id}/."""
 
-    url = "/api/teams/memberships/"
+    url = "/api/iam/teams/memberships/"
 
     def test_remove_member_from_team(
         self,

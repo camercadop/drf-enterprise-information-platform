@@ -9,13 +9,13 @@ from rest_framework.test import APIClient
 from apps.iam_roles.models import TenantRole
 from apps.iam_users.models import TenantMembership
 from tests.base import BaseCRUDAPITest
-from tests.factories.tenants import TenantMembershipFactory, TenantRoleFactory
+from tests.factories.tenants import TenantRoleFactory
 
 
 class TestTenantRoleViewSet(BaseCRUDAPITest):
-    """Tests for /api/roles/ CRUD."""
+    """Tests for /api/iam/roles/ CRUD."""
 
-    url = "/api/roles/"
+    url = "/api/iam/roles/"
 
     @pytest.fixture(autouse=True)
     def _setup_base(
@@ -56,7 +56,7 @@ class TestTenantRoleViewSetPermissions:
     def test_non_admin_cannot_create_role(self, auth_client: APIClient) -> None:
         """Regular members cannot create roles."""
         response = auth_client.post(
-            "/api/roles/", {"name": "New Role"}, format="json"
+            "/api/iam/roles/", {"name": "New Role"}, format="json"
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -65,7 +65,7 @@ class TestTenantRoleViewSetPermissions:
     ) -> None:
         """Authenticated users can list roles in their tenant."""
         TenantRoleFactory(tenant=membership.tenant, name="Viewer Role")
-        response = auth_client.get("/api/roles/")
+        response = auth_client.get("/api/iam/roles/")
         assert response.status_code == status.HTTP_200_OK
 
 
@@ -91,7 +91,7 @@ class TestTenantRoleSerializerEnforcement:
             tenant=self.membership.tenant, name="Immutable Role", kind="custom"
         )
         response = self.client.patch(
-            f"/api/roles/{role.pk}/", {"kind": "admin"}, format="json"
+            f"/api/iam/roles/{role.pk}/", {"kind": "admin"}, format="json"
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data["data"]["kind"][0].code == "invalid"
@@ -99,7 +99,7 @@ class TestTenantRoleSerializerEnforcement:
     def test_viewer_role_cannot_have_write_permissions(self) -> None:
         """Creating a viewer-kind role with a write permission returns 400."""
         response = self.client.post(
-            "/api/roles/",
+            "/api/iam/roles/",
             {
                 "name": "Bad Viewer",
                 "kind": "viewer",
@@ -113,7 +113,7 @@ class TestTenantRoleSerializerEnforcement:
     def test_viewer_role_can_have_readonly_permissions(self) -> None:
         """Creating a viewer-kind role with only readonly permissions succeeds."""
         response = self.client.post(
-            "/api/roles/",
+            "/api/iam/roles/",
             {
                 "name": "Good Viewer",
                 "kind": "viewer",
@@ -129,7 +129,7 @@ class TestTenantRoleSerializerEnforcement:
             tenant=self.membership.tenant, name="Viewer Patch", kind="viewer"
         )
         response = self.client.patch(
-            f"/api/roles/{role.pk}/",
+            f"/api/iam/roles/{role.pk}/",
             {"permissions": {"iam_roles.roles.delete": 1}},
             format="json",
         )
@@ -140,7 +140,7 @@ class TestTenantRoleSerializerEnforcement:
         """Creating two roles with the same name in the same tenant returns 400."""
         TenantRoleFactory(tenant=self.membership.tenant, name="Duplicate")
         response = self.client.post(
-            "/api/roles/", {"name": "Duplicate", "kind": "custom"}, format="json"
+            "/api/iam/roles/", {"name": "Duplicate", "kind": "custom"}, format="json"
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data["data"]["GLOBAL_ERRORS"][0].code == "already_exists"

@@ -13,9 +13,9 @@ from tests.factories.teams import TeamFactory
 
 
 class TestTeamViewSet(BaseCRUDAPITest):
-    """Tests for /api/teams/ CRUD."""
+    """Tests for /api/iam/teams/ CRUD."""
 
-    url = "/api/teams/"
+    url = "/api/iam/teams/"
 
     @pytest.fixture(autouse=True)
     def _setup_base(
@@ -49,7 +49,7 @@ class TestTeamViewSetPermissions:
     ) -> None:
         """Regular members cannot create teams."""
         response = auth_client.post(
-            "/api/teams/", {"name": "New Team"}, format="json"
+            "/api/iam/teams/", {"name": "New Team"}, format="json"
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -58,5 +58,5 @@ class TestTeamViewSetPermissions:
     ) -> None:
         """Authenticated users can list teams in their tenant."""
         TeamFactory(tenant=membership.tenant)
-        response = auth_client.get("/api/teams/")
+        response = auth_client.get("/api/iam/teams/")
         assert response.status_code == status.HTTP_200_OK
