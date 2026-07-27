@@ -287,6 +287,27 @@ def invalid_payloads(self):
 
 ---
 
+## Asserting Success Responses
+
+`response.data` is the pre-render payload — it does not contain the `{status, data}` envelope. The envelope is applied by `APIRenderer` at render time. Always use `response.json()` when asserting on success response bodies:
+
+```python
+# Correct
+data = response.json()["data"]
+assert data["id"] == str(instance.pk)
+
+# Correct — paginated list
+results = response.json()["data"]["results"]
+assert str(instance.pk) in [r["id"] for r in results]
+
+# Wrong — response.data has no "data" key for success responses
+assert response.data["data"]["id"] == str(instance.pk)
+```
+
+For error responses (4xx), the exception handler mutates `response.data` directly, so `response.data["data"]` is correct there.
+
+---
+
 ## Asserting 400 Responses in Standalone Tests
 
 When writing `@pytest.mark.django_db` tests outside `BaseCRUDAPITest`, always assert beyond the status code. A bare `assert response.status_code == 400` passes for any validation failure — including ones caused by unrelated bugs.
@@ -332,6 +353,7 @@ assert "permissions" in response.data["data"]
 | Using `unittest.TestCase` | Breaks pytest fixtures and subtests | Use plain classes with `Test*` prefix |
 | Creating instances in `_setup_base` instead of `create_instance` | Smoke tests fail because they run without valid instances | Use `create_instance()` for test data |
 | Forgetting `format="json"` in POST/PATCH calls | DRF defaults to multipart, nested data breaks | Always pass `format="json"` (base classes handle this) |
+| Using `response.data["data"]` on success responses | `response.data` is pre-render and has no envelope | Use `response.json()["data"]` for success responses |
 | Testing business logic through API calls only | Slow, brittle, hard to isolate failures | Write unit tests for logic, integration tests for wiring |
 | Putting test factories inside `apps/` | Breaks separation between production and test code | Factories always go in `tests/factories/` |
 

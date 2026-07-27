@@ -210,11 +210,12 @@ class TestRepresentInstance:
 
         field = _make_field(representation_fields=["id", "role"])
 
-        class FakeRole(Model):
+        class FakeRoleBasic(Model):
             class Meta:
                 app_label = "tests"
+                managed = False
 
-        role = FakeRole.__new__(FakeRole)
+        role = FakeRoleBasic.__new__(FakeRoleBasic)
         object.__setattr__(role, "pk", uuid.UUID("00000000-0000-0000-0000-000000000002"))
 
         instance = _make_instance(id="abc", role=role)
@@ -229,13 +230,14 @@ class TestRepresentInstance:
 
         field = _make_field(representation_fields=["id", "role"])
 
-        class FakeRole(Model):
+        class FakeRoleWithFields(Model):
             fk_representation_fields = ["id", "name"]
 
             class Meta:
                 app_label = "tests"
+                managed = False
 
-        role = FakeRole.__new__(FakeRole)
+        role = FakeRoleWithFields.__new__(FakeRoleWithFields)
         object.__setattr__(role, "pk", uuid.UUID("00000000-0000-0000-0000-000000000002"))
         role.id = uuid.UUID("00000000-0000-0000-0000-000000000002")  # type: ignore[attr-defined]
         role.name = "Admin"  # type: ignore[attr-defined]
