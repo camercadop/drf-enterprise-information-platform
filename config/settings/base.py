@@ -34,6 +34,8 @@ INSTALLED_APPS = [
     "apps.iam_users",
     "apps.iam_auth",
     "apps.dms_document_types",
+    "apps.dms_documents",
+    "apps.dms_document_versions",
 ]
 
 AUTH_USER_MODEL = "iam_users.User"
@@ -137,6 +139,7 @@ REST_FRAMEWORK = {
     "NON_FIELD_ERRORS_KEY": "GLOBAL_ERRORS",
     "DEFAULT_SCHEMA_CLASS": "core.openapi.AutoSchema",
     "DEFAULT_SERIALIZER_PLUGINS": [
+        "core.serializers.plugins.NonEditableFieldsSerializerPlugin",
         "apps.tenants.plugins.TenantInjectionSerializerPlugin",
         "apps.sys_audit.plugins.AuditSerializerPlugin",
     ],

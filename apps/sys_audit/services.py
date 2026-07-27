@@ -1,9 +1,11 @@
 """Audit logging helper for recording state-changing operations."""
 
+import json
 from typing import Any
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
+from django.core.serializers.json import DjangoJSONEncoder
 
 from apps.sys_audit.models import AuditLog
 
@@ -36,12 +38,13 @@ def log_audit(
     Returns:
         The created AuditLog instance.
     """
+    safe_changes = json.loads(json.dumps(changes or {}, cls=DjangoJSONEncoder))
     entry: AuditLog = AuditLog.objects.create(
         actor=actor,
         action=action,
         target_type=target_type,
         target_id=target_id,
         tenant_id=tenant_id,
-        changes=changes or {},
+        changes=safe_changes,
     )
     return entry
