@@ -2,8 +2,6 @@
 Base serializers for the enterprise platform.
 """
 
-from __future__ import annotations
-
 from typing import Any
 
 from django.conf import settings
@@ -11,6 +9,7 @@ from django.db import models
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
 from rest_framework import serializers
+from rest_framework.fields import Field
 
 from core.base.plugins import SerializerPlugin
 
@@ -19,10 +18,6 @@ class BaseSerializer(serializers.ModelSerializer):
     """
     Base serializer with plugin system and template method lifecycle.
     """
-
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-    id = serializers.UUIDField(read_only=True)
 
     class Meta:
         abstract = True
@@ -69,6 +64,18 @@ class BaseSerializer(serializers.ModelSerializer):
         )
         merged = global_plugins + local_plugins
         return [plugin() for plugin in merged if plugin not in excluded]
+
+    def get_fields(self) -> dict[str, Field]:
+        """Build the field dict and apply filter_fields plugins.
+
+        Runs after DRF's standard field resolution. Each plugin implementing
+        filter_fields receives the full fields dict and must return it.
+        """
+        fields: dict[str, Field] = super().get_fields()  # type: ignore[misc]
+        for plugin in self._get_plugins():
+            if hasattr(plugin, "filter_fields"):
+                fields = plugin.filter_fields(self, fields)
+        return fields
 
     def _run_plugins(self, hook: str, *args: Any, **kwargs: Any) -> None:
         """Execute a named hook on all resolved plugins.
@@ -188,6 +195,19 @@ class BaseSerializer(serializers.ModelSerializer):
         return value
 
 
+class StandardFieldsSerializerMixin:
+    """Declares standard read-only fields present on all platform models.
+
+    Include this mixin on any serializer that exposes a model inheriting
+    from the platform base models. Provides id, created_at, and updated_at
+    as explicit read-only declarations.
+    """
+
+    id = serializers.UUIDField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+
+
 class SoftDeletableSerializerMixin:
     """
     Mixin that handles soft-delete representation.
@@ -204,9 +224,9 @@ class SoftDeletableSerializerMixin:
         return representation
 
 
-class DefaultModelSerializer(SoftDeletableSerializerMixin, BaseSerializer):
-    """
-    Default serializer for most concrete model serializers.
-    """
+class DefaultModelSerializer(
+    StandardFieldsSerializerMixin, SoftDeletableSerializerMixin, BaseSerializer
+):
+    """Default serializer for most concrete model serializers."""
 
     pass

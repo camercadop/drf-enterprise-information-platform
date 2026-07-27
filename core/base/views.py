@@ -63,6 +63,13 @@ class BaseGenericViewSet(viewsets.GenericViewSet):
         for plugin in self._get_plugins():
             if hasattr(plugin, "filter_queryset"):
                 qs = plugin.filter_queryset(self, qs)
+
+        if hasattr(self, "parent_lookup_fields") and self.parent_lookup_fields:
+            for lookup_field, model_field in self.parent_lookup_fields.items():
+                if lookup_field in self.kwargs:
+                    filter_value = self.kwargs[lookup_field]
+                    qs = qs.filter(**{model_field: filter_value})
+
         return qs
 
     def get_serializer(self, *args: Any, **kwargs: Any) -> serializers.Serializer:

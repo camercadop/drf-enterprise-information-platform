@@ -18,10 +18,11 @@ Abstract base classes that all domain models, serializers, and viewsets inherit 
 
 ### Serializers
 
-- `SerializerPlugin` — base class for stateless serializer plugins (hooks: `on_pre_create`, `on_post_create`, `on_pre_update`, `on_post_update`, `on_post_destroy`, `on_pre_validate`, `on_post_validate`)
+- `SerializerPlugin` — base class for stateless serializer plugins (hooks: `on_pre_create`, `on_post_create`, `on_pre_update`, `on_post_update`, `on_post_destroy`, `on_pre_validate`, `on_post_validate`, `filter_fields`)
 - `BaseSerializer` — `ModelSerializer` with plugin dispatch and `pre_*/do_*/post_*` template methods for create, update, and validate
+- `StandardFieldsSerializerMixin` — declares `id`, `created_at`, and `updated_at` as explicit read-only fields
 - `SoftDeletableSerializerMixin` — adds `is_deleted` flag and hides delete fields on active records
-- `DefaultModelSerializer` — combines `SoftDeletableSerializerMixin` + `BaseSerializer`; use as the default parent for concrete serializers
+- `DefaultModelSerializer` — combines `StandardFieldsSerializerMixin` + `SoftDeletableSerializerMixin` + `BaseSerializer`; use as the default parent for concrete serializers
 
 ### Views
 

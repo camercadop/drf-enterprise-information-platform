@@ -30,4 +30,5 @@ class SerializerPlugin:
         on_post_update(serializer, instance)
         on_pre_validate(serializer, data)
         on_post_validate(serializer, validated_data)
+        filter_fields(serializer, fields) -> dict[str, Field]  # must return the (modified) fields dict
     """
