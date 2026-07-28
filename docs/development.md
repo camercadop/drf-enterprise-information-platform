@@ -39,6 +39,14 @@ In a separate terminal:
 uv run celery -A config worker --loglevel=info
 ```
 
+## Running Celery Beat
+
+Required for the event bus consumer and any other periodic tasks. In a separate terminal:
+
+```bash
+uv run celery -A config beat --loglevel=info
+```
+
 ## Project Structure
 
 Apps are grouped by naming convention. See [Architecture](architecture.md) for details.

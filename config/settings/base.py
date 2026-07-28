@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "apps.dms_document_types",
     "apps.dms_documents",
     "apps.dms_document_versions",
+    "apps.sys_eventbus",
 ]
 
 AUTH_USER_MODEL = "iam_users.User"
@@ -199,6 +200,17 @@ LOGGING = {
     },
 }
 
+
+APP_SYS_EVENTBUS = {
+    "STREAM_NAME": env("EVENTBUS_STREAM_NAME", default="sys:eventbus"),
+    "DLQ_STREAM_NAME": env("EVENTBUS_DLQ_STREAM_NAME", default="sys:eventbus:dlq"),
+    "CONSUMER_GROUP": env("EVENTBUS_CONSUMER_GROUP", default="sys_eventbus_group"),
+    "CONSUMER_NAME": env("EVENTBUS_CONSUMER_NAME", default="sys_eventbus_consumer"),
+    "POLL_INTERVAL_SECONDS": env.int("EVENTBUS_POLL_INTERVAL_SECONDS", default=5),
+    "MAX_RETRIES": env.int("EVENTBUS_MAX_RETRIES", default=3),
+    "BATCH_SIZE": env.int("EVENTBUS_BATCH_SIZE", default=100),
+}
+
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
 CELERY_TASK_ALWAYS_EAGER = False
@@ -206,6 +218,12 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULE = {
+    "poll-eventbus": {
+        "task": "apps.sys_eventbus.tasks.poll_eventbus",
+        "schedule": APP_SYS_EVENTBUS["POLL_INTERVAL_SECONDS"],
+    },
+}
 
 AUTH_RATE_LIMIT = {
     "IP_RATE": env("AUTH_RATE_LIMIT_IP", default="10/minute"),

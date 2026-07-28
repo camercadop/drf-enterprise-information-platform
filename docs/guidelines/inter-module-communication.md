@@ -91,6 +91,52 @@ users = User.objects.filter(is_active=True)
 
 Do not call `.save()`, `.delete()`, or mutate instances from another module's model.
 
+### 4. Domain Events via the Event Bus
+
+When module A needs to notify other modules that something happened — without knowing who is listening — publish a domain event via `sys_eventbus`:
+
+```python
+# apps/dms_ingestion/tasks.py (producer — non-request context)
+from apps.sys_eventbus.publisher import publish
+
+publish(
+    event_type="document.created",
+    payload={"document_id": str(document.pk)},
+    tenant_id=str(tenant_id),
+    actor_id=str(actor_id),
+)
+```
+
+```python
+# apps/dms_ingestion/views.py (producer — request context)
+from apps.sys_eventbus.publisher import publish_event_from_request
+
+publish_event_from_request(
+    event_type="document.created",
+    payload={"document_id": str(document.pk)},
+    request=request,
+)
+```
+
+```python
+# apps/dms_documents/event_handlers.py (consumer)
+from apps.sys_eventbus.registry import event_handler
+from apps.sys_eventbus.envelope import EventEnvelope
+
+
+@event_handler("document.created")
+def on_document_created(envelope: EventEnvelope) -> None:
+    """React to a document.created event."""
+    ...
+```
+
+Use this pattern when:
+- The producer should not know about the consumer
+- Multiple modules may react to the same event
+- The reaction can be deferred (async, non-blocking)
+
+Do not use events as a substitute for synchronous service calls when the producer needs a result or must guarantee the consumer ran before continuing.
+
 ---
 
 ## Forbidden Patterns
@@ -146,5 +192,6 @@ These module boundaries map directly to service extraction:
 | Need to read a setting or computed value from another module | Public utility function in the owning module |
 | Need to filter/join against another module's model | Import the model, read-only queries only |
 | Need to mutate another module's data | Call a service function exposed by the owning module |
+| Need to notify other modules that something happened (async, no result needed) | Publish a domain event via `sys_eventbus.publisher.publish()` |
 | Shared logic needed by multiple apps | Put it in `core/` (if domain-agnostic) or extract a new shared app |
 | Two apps depend on each other | Refactor — extract shared concern into `core/` or a third app |

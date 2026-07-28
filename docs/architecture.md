@@ -97,6 +97,20 @@ Celery is used for asynchronous task execution with Redis as the broker.
 
 The custom backend lives in `core/celery/backend.py` and is wired in `config/celery.py`.
 
+## Event Bus
+
+`apps/sys_eventbus` provides platform-wide publish/subscribe infrastructure for domain events.
+
+- Transport: Redis Streams (`sys:eventbus`) — messages persist, consumer groups supported
+- Consumer: Celery beat task (`poll_eventbus`) polls the stream on a configurable interval
+- Dispatch: each handler is executed as an independent Celery task (`dispatch_handler`)
+- Delivery guarantee: at-most-once — messages are acknowledged before handler execution
+- Idempotency: `ProcessedEvent` table prevents double-execution across retries
+- Dead letter: messages that exhaust retries are written to `DeadLetterEvent` for operator inspection
+- Handler registration: `@event_handler("event.type")` decorator in each app's `event_handlers.py`, auto-discovered at startup
+
+See [sys_eventbus README](../apps/sys_eventbus/README.md) for the full public API and usage.
+
 ## Business Logic Layer
 
 There is no dedicated service layer. Business logic lives in models, serializers (via the lifecycle hooks and plugin system), and views. A service layer may be introduced for specific domains when complexity justifies it.

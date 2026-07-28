@@ -214,4 +214,42 @@ erDiagram
 - On password change, the current hash is saved to history before the new password is set.
 - Validation rejects any new password that matches the last 5 entries (configurable via `PASSWORD_HISTORY_LIMIT`).
 
+---
+
+## Event Bus (sys_eventbus)
+
+```mermaid
+erDiagram
+    ProcessedEvent {
+        UUID id PK
+        VARCHAR message_id UK
+        VARCHAR event_type
+        DATETIME processed_at
+    }
+
+    DeadLetterEvent {
+        UUID id PK
+        VARCHAR message_id
+        VARCHAR event_type
+        JSON payload
+        UUID tenant_id
+        TEXT error
+        INT retries
+        DATETIME failed_at
+    }
+```
+
+**Tables:** `sys_eventbus_processed_event`, `sys_eventbus_dead_letter_event`
+
+**Constraints:**
+
+| Model | Constraint | Fields |
+|-------|-----------|--------|
+| ProcessedEvent | unique message_id | (message_id) |
+
+**Design decisions:**
+- `ProcessedEvent` enforces idempotency — the consumer checks this table before dispatching a handler. If the message ID is already present, execution is skipped.
+- `DeadLetterEvent` preserves the full envelope payload for manual inspection and potential reprocessing. Never deleted by application logic.
+- `tenant_id` on `DeadLetterEvent` is nullable to support platform-level (non-tenant-scoped) events.
+
 
