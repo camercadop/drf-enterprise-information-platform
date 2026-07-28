@@ -10,6 +10,7 @@ erDiagram
     DocumentType ||--o{ Document : "typed as"
     User ||--o{ Document : "owns / creates / updates"
     Document ||--o{ DocumentVersion : "versioned by"
+    DocumentType ||--o{ MetadataDefinition : "defines"
 ```
 
 ## Models
@@ -25,6 +26,7 @@ Represents a document owned by a tenant. Inherits from `TenantAwareModel` (soft-
 | `description` | Optional long-form description. |
 | `availability` | Lifecycle state: `ACTIVE` (default) or `ARCHIVED`. |
 | `archived_at` | Timestamp set when the document is archived. |
+| `metadata` | JSON object storing metadata values for the document. Validated against `MetadataDefinition` records for the assigned `document_type`. |
 | `owner` | User responsible for the document. Nullable (`SET_NULL`). |
 | `created_by` | User who created the document. Nullable (`SET_NULL`). |
 | `updated_by` | User who last updated the document. Nullable (`SET_NULL`). |
@@ -38,6 +40,7 @@ Represents a document owned by a tenant. Inherits from `TenantAwareModel` (soft-
 ## Design Decisions
 
 - `document_type` is nullable — documents can exist without a type classification.
+- `metadata` is validated by `MetadataValidationService` when `document_type` is set. If no `document_type` is assigned, metadata validation is skipped.
 - `category` is reserved for the future `dms_categories` module and is not present on this model.
 - `current_version_id` was explicitly excluded — version promotion logic is deferred.
 - All user FKs use `SET_NULL` to preserve document records when users are deleted.

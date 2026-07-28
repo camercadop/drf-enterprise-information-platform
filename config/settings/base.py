@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.dms_document_versions",
     "apps.sys_eventbus",
     "apps.dms_ingestion",
+    "apps.dms_metadata",
     "storages",
 ]
 

@@ -8,6 +8,7 @@ Tenant-scoped document type classifications for the Document Management System.
 erDiagram
     Tenant ||--o{ DocumentType : "defines"
     DocumentType ||--o{ Document : "classifies"
+    DocumentType ||--o{ MetadataDefinition : "defines"
 ```
 
 ## Models

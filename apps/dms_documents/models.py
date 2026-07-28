@@ -33,6 +33,11 @@ class Document(TenantAwareModel):
     )
     # Long-form description of the document
 
+    metadata = models.JSONField(
+        default=dict,
+    )
+    # Document metadata stored as JSON (key-value pairs)
+
     class Availability(models.TextChoices):
         ACTIVE = "ACTIVE", "Active"
         ARCHIVED = "ARCHIVED", "Archived"

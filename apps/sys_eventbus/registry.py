@@ -34,11 +34,6 @@ def event_handler(event_type: str) -> Callable[[HandlerFn], HandlerFn]:
 
     def decorator(fn: HandlerFn) -> HandlerFn:
         _registry[event_type].append(fn)
-        logger.info(
-            "Event handler registered event_type=%s handler=%s",
-            event_type,
-            fn.__qualname__,
-        )
         return fn
 
     return decorator
@@ -73,7 +68,6 @@ def autodiscover_handlers() -> None:
         module_path = f"{app_config.name}.event_handlers"
         try:
             importlib.import_module(module_path)
-            logger.info("Event handlers autodiscovered app=%s", app_config.name)
         except ModuleNotFoundError:
             pass
         except Exception:

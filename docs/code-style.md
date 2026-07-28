@@ -67,6 +67,11 @@ How the code should look — formatting, structure, naming, and structural conve
 - Let the custom exception handler (`core.exceptions.handler`) wrap errors into the standard envelope
 - For serializer-level validation, raise DRF's `serializers.ValidationError` (the handler normalizes it)
 
+## Settings
+
+- All new app-level settings blocks use the `APP_` prefix (e.g., `APP_SYS_EVENTBUS`, `APP_DMS_INGESTION`)
+- Existing settings blocks (`AUTH_LOCKOUT`, `AUTH_RATE_LIMIT`, `AUTH_SESSION`) are not renamed
+
 ## Import Ordering
 
 Managed by Ruff (`isort` rules, rule set `I`). The enforced order is:

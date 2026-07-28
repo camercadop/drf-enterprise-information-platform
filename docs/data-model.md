@@ -10,10 +10,22 @@ erDiagram
     Tenant ||--o{ TenantRole : "defines"
     Tenant ||--o{ TenantMembership : "has"
     Tenant ||--o{ UserTenantAttribute : "scopes"
+    Tenant ||--o{ Team : "has"
+    Tenant ||--o{ Document : "owns"
+    Tenant ||--o{ DocumentType : "defines"
+    Tenant ||--o{ MetadataDefinition : "owns"
+    Tenant ||--o{ AuditLog : "scopes"
+    Tenant ||--o{ UserEvent : "scopes"
     User ||--o{ TenantMembership : "belongs via"
     User ||--o{ UserPasswordHistory : "tracks"
     User ||--o{ UserTenantAttribute : "has many"
+    User ||--o{ UserEvent : "emits"
     TenantRole ||--o{ TenantMembership : "assigned via"
+    TenantMembership ||--o{ TeamMembership : "added via"
+    Team ||--o{ TeamMembership : "has"
+    DocumentType ||--o{ Document : "classifies"
+    DocumentType ||--o{ MetadataDefinition : "defines"
+    Document ||--o{ DocumentVersion : "versioned by"
 ```
 
 ---
@@ -251,6 +263,243 @@ erDiagram
 - `ProcessedEvent` enforces idempotency — the consumer checks this table before dispatching a handler. If the message ID is already present, execution is skipped.
 - `DeadLetterEvent` preserves the full envelope payload for manual inspection and potential reprocessing. Never deleted by application logic.
 - `tenant_id` on `DeadLetterEvent` is nullable to support platform-level (non-tenant-scoped) events.
+
+---
+
+## Teams (iam_teams)
+
+```mermaid
+erDiagram
+    Team {
+        UUID id PK
+        UUID tenant_id FK
+        VARCHAR name
+        TEXT description
+        BOOLEAN is_active
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+
+    TeamMembership {
+        UUID id PK
+        UUID tenant_id FK
+        UUID team_id FK
+        UUID membership_id FK
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+
+    Team ||--o{ TeamMembership : "has many"
+    TenantMembership ||--o{ TeamMembership : "added via"
+```
+
+**Tables:** `iam_teams`, `iam_teams_memberships`
+
+**Constraints:**
+
+| Model | Constraint | Fields |
+|-------|-----------|--------|
+| Team | unique_team_per_tenant | (tenant, name) |
+| TeamMembership | unique_member_per_team | (team, membership) |
+
+**Design decisions:**
+- `TeamMembership.membership` is a FK to `TenantMembership`, not directly to `User` — this enforces that only users with an active tenant membership can be added to teams within that tenant.
+- Teams are `TenantAwareModel` — soft-deletable and tenant-scoped.
+
+---
+
+## Audit Log (sys_audit)
+
+```mermaid
+erDiagram
+    AuditLog {
+        UUID id PK
+        UUID actor_id FK
+        VARCHAR action
+        VARCHAR target_type
+        UUID target_id
+        UUID tenant_id FK
+        JSON changes
+        DATETIME created_at
+    }
+
+    User ||--o{ AuditLog : "performs"
+    Tenant ||--o{ AuditLog : "scopes"
+```
+
+**Table:** `sys_audit_log`
+
+**Indexes:**
+
+| Name | Fields |
+|------|--------|
+| idx_audit_tenant_time | (tenant, created_at) |
+| idx_audit_target | (target_type, target_id) |
+
+**Design decisions:**
+- `AuditLog` does not inherit from `BaseModel` — it defines its own `id` and `created_at` only. No `updated_at`, no soft-delete: records are immutable by design (ADR-009).
+- `update` and `delete` are blocked at both the manager and instance level — any attempt raises `NotImplementedError`.
+- `tenant` is nullable to support platform-level (non-tenant-scoped) operations.
+- `changes` stores the full payload on create, a field diff on update, and is empty on delete.
+- `target_type` stores the model label (e.g., `"tenants.Team"`) for cross-model querying without FK constraints.
+
+---
+
+## User Events (sys_user_event)
+
+```mermaid
+erDiagram
+    UserEvent {
+        UUID id PK
+        UUID actor_id FK
+        VARCHAR user_email
+        VARCHAR category
+        VARCHAR event
+        UUID tenant_id FK
+        JSON metadata
+        DATETIME created_at
+    }
+
+    AuthAttemptLog {
+        UUID id PK
+        VARCHAR email
+        VARCHAR ip_address
+        BOOLEAN success
+        VARCHAR failure_reason
+        UUID tenant_id FK
+        DATETIME created_at
+    }
+
+    User ||--o{ UserEvent : "emits"
+    Tenant ||--o{ UserEvent : "scopes"
+    Tenant ||--o{ AuthAttemptLog : "scopes"
+```
+
+**Tables:** `sys_user_events`, `sys_auth_attempts`
+
+**Indexes:**
+
+| Table | Name | Fields |
+|-------|------|--------|
+| UserEvent | idx_user_event_actor_time | (actor, created_at) |
+| UserEvent | idx_user_event_tenant_time | (tenant, created_at) |
+| UserEvent | idx_user_event_category_event | (category, event) |
+| AuthAttemptLog | idx_auth_attempt_email_time | (email, created_at) |
+| AuthAttemptLog | idx_auth_attempt_ip_time | (ip_address, created_at) |
+
+**Design decisions:**
+- `UserEvent.actor` uses `SET_NULL` — events survive user deletion. `user_email` is denormalized to preserve identity context after the actor is removed.
+- `AuthAttemptLog` has no FK to `User` — attempts may come from unknown or deleted users; `email` is stored as plain text.
+- Both models are append-only by convention: no update or delete operations are performed by application logic.
+- `tenant` is nullable on both models to support platform-level events.
+
+---
+
+## DMS Documents
+
+```mermaid
+erDiagram
+    Tenant ||--o{ DocumentType : "defines"
+    Tenant ||--o{ Document : "owns"
+    Tenant ||--o{ MetadataDefinition : "owns"
+    DocumentType ||--o{ Document : "classifies"
+    DocumentType ||--o{ MetadataDefinition : "defines"
+    User ||--o{ Document : "owns / creates / updates"
+    Document ||--o{ DocumentVersion : "versioned by"
+
+    DocumentType {
+        UUID id PK
+        UUID tenant_id FK
+        VARCHAR name
+        TEXT description
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+
+    Document {
+        UUID id PK
+        UUID tenant_id FK
+        UUID document_type_id FK
+        VARCHAR title
+        TEXT description
+        VARCHAR availability
+        DATETIME archived_at
+        JSON metadata
+        UUID owner_id FK
+        UUID created_by_id FK
+        UUID updated_by_id FK
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+
+    MetadataDefinition {
+        UUID id PK
+        UUID tenant_id FK
+        UUID document_type_id FK
+        VARCHAR code
+        VARCHAR name
+        VARCHAR data_type
+        BOOLEAN required
+        BOOLEAN searchable
+        BOOLEAN filterable
+        BOOLEAN sortable
+        BOOLEAN indexed
+        JSON default_value
+        JSON validation_rules
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+
+    DocumentVersion {
+        UUID id PK
+        UUID tenant_id FK
+        UUID document_id FK
+        INT version
+        VARCHAR filename
+        VARCHAR mime_type
+        VARCHAR extension
+        VARCHAR checksum
+        BIGINT size
+        VARCHAR storage_backend
+        VARCHAR storage_key
+        VARCHAR storage_state
+        UUID created_by_id FK
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+```
+
+**Tables:** `dms_document_types`, `dms_documents`, `dms_metadata_definitions`, `dms_document_versions`
+
+**Constraints:**
+
+| Model | Constraint | Fields |
+|-------|-----------|--------|
+| DocumentType | unique_document_type_per_tenant | (tenant, name) |
+| Document | unique_document_title_per_tenant | (tenant, title) |
+| MetadataDefinition | unique_metadata_definition_per_tenant_and_document_type | (tenant, document_type, code) |
+| DocumentVersion | unique_version_per_document | (document, version) |
+
+**Design decisions:**
+- `document_type` on `Document` is nullable — documents can exist without a type classification.
+- `Document.metadata` is a `JSONField` storing values only. The schema is defined by `MetadataDefinition` records for the assigned type. Validation is performed by `MetadataValidationService` when `document_type` is set.
+- `MetadataDefinition` is `TenantAwareModel` — it carries a direct `tenant` FK in addition to `document_type`, enabling tenant-level isolation independent of the document type.
+- `MetadataDefinition.validation_rules` structure is standardized per `data_type` and validated at both the API and model layers.
+- `DocumentVersion.version` is a monotonically increasing integer scoped to the document, assigned by the serializer at creation time — not editable via the API.
+- `DocumentVersion` storage fields (`checksum`, `extension`, `size`, `storage_key`, `storage_state`) are all `editable=False` — populated by the ingestion pipeline, not by direct API input.
+- `StorageState` lifecycle: `UPLOADING` → `PROCESSING` → `AVAILABLE` (or `CORRUPTED` / `QUARANTINED` / `ARCHIVED`).
 
 ---
 

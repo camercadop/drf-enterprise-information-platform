@@ -45,11 +45,13 @@ class TestDocumentViewSet(BaseCRUDAPITest):
                 "title": "Annual Report",
                 "description": "Company annual report",
                 "document_type": DocumentTypeFactory(tenant=self.tenant).id,
+                "metadata": {},
             },
             {
                 "title": "User Manual",
                 "description": "",
                 "document_type": DocumentTypeFactory(tenant=self.tenant).id,
+                "metadata": {},
             },
             {
                 "title": "Contract",

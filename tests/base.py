@@ -158,7 +158,7 @@ class BaseCreateAPITest(BaseAPITest):
             response: The error response to inspect.
             expected_errors: List of field names (str) or {field: code} dicts.
         """
-        data = response.data
+        data = response.data.get("data", response.data)
         for error in expected_errors:
             if isinstance(error, str):
                 assert error in data, f"Expected field '{error}' in response errors"
@@ -358,7 +358,7 @@ class BaseUpdateAPITest(BaseAPITest):
             response: The error response to inspect.
             expected_errors: List of field names (str) or {field: code} dicts.
         """
-        data = response.data
+        data = response.data.get("data", response.data)
         for error in expected_errors:
             if isinstance(error, str):
                 assert error in data, f"Expected field '{error}' in response errors"

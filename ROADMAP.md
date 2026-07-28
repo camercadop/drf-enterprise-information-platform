@@ -22,7 +22,7 @@
 
 - ✅ Upload
 - Download
-- Metadata
+- ✅ Metadata
 
 ### Infrastructure
 
