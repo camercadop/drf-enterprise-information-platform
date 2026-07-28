@@ -2,6 +2,7 @@
 
 import logging
 
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import mixins, status
 from rest_framework.parsers import FileUploadParser
 from rest_framework.request import Request
@@ -42,6 +43,10 @@ class UploadView(APIView):
 
     parser_classes = [FileUploadParser]
 
+    @extend_schema(
+        request={"application/octet-stream": {"type": "string", "format": "binary"}},
+        responses={204: OpenApiResponse(description="File uploaded successfully.")},
+    )
     def put(self, request: Request, pk: str) -> Response:
         """Write the uploaded file to storage and enqueue the pipeline.
 
