@@ -40,7 +40,7 @@ class _Task(ResultModelBase):
     )
 
     def __init__(self, task_id: str) -> None:
-        self.task_id = task_id
+        self.task_id = task_id  # type: ignore[assignment]
 
     def to_dict(self) -> dict:
         """Return a dict representation of the task result."""
@@ -107,8 +107,8 @@ class _TaskSet(ResultModelBase):
     date_done = sa.Column(sa.DateTime, default=_get_utc_now, nullable=True, index=True)
 
     def __init__(self, taskset_id: str, result: object) -> None:
-        self.taskset_id = taskset_id
-        self.result = result
+        self.taskset_id = taskset_id  # type: ignore[assignment]
+        self.result = result  # type: ignore[assignment]
 
     def to_dict(self) -> dict:
         """Return a dict representation of the taskset result."""
