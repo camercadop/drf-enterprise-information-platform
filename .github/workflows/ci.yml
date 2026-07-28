@@ -42,7 +42,7 @@ jobs:
           python-version: "3.14"
           allow-prereleases: true
 
-      - run: uv sync
+      - run: uv sync --group otel
 
       - name: Security audit
         run: uv audit

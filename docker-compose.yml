@@ -60,6 +60,8 @@ services:
       - ./static:/app/static
       - ./media:/app/media
 
+  # Celery Worker Service
+  # Background task processing
   celery:
     build: .
     container_name: eip-celery
@@ -88,10 +90,89 @@ services:
       retries: 3
       start_period: 10s
 
+  # OpenTelemetry Collector Service
+  # Receives telemetry data from instrumented services and exports to backends
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: eip-otel-collector
+    command: ["--config", "/etc/otelcol/config.yaml"]
+    volumes:
+      - ./infra/otel-collector-config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - tempo
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - eip_network
+
+  # Tempo Service
+  # Distributed tracing backend
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: eip-tempo
+    command: ["-config.file", "/etc/tempo.yaml"]
+    volumes:
+      - tempo_data:/tmp/tempo
+    ports:
+      - "3200:3200"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - eip_network
+
+  # Prometheus Service
+  # Metrics backend
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: eip-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - eip_network
+
+  # Grafana Service
+  # Observability dashboard and visualization
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: eip-grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SERVER_ROOT_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - tempo
+    restart: unless-stopped
+    networks:
+      - eip_network
+
 volumes:
   # Persistent volumes for database data
   postgres_data:
   redis_data:
+  tempo_data:
+  prometheus_data:
+  grafana_data:
 
 # Docker network for service communication
 # Isolated network for EIP services with custom subnet

@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: 'EIP'
+    folder: ''
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true

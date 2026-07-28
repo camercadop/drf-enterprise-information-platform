@@ -7,3 +7,6 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = "DENY"
+
+# OpenTelemetry: ship traces and metrics to the OTLP collector in production
+OTEL_EXPORTER = "otlp"

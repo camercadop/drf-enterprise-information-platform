@@ -12,3 +12,6 @@ LOGGING["handlers"]["console"] = {  # type: ignore[index]  # noqa: F405
     "formatter": "console",
     "rich_tracebacks": True,
 }
+
+# OpenTelemetry: use console exporter in development for easy inspection
+OTEL_EXPORTER = "console"

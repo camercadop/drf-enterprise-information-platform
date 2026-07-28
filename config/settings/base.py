@@ -54,6 +54,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.tenants.middleware.TenantContextMiddleware",
+    "apps.tenants.middleware.TenantTelemetryMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -169,6 +170,15 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_CACHE_BACKEND": "schema",
 }
 
+
+# OpenTelemetry settings – configurable via environment variables
+OTEL_EXPORTER = env("OTEL_EXPORTER", default="console")  # console | otlp | none
+OTEL_EXPORTER_OTLP_ENDPOINT = env(
+    "OTEL_EXPORTER_OTLP_ENDPOINT", default="http://localhost:4318"
+)
+OTEL_SERVICE_NAME = env(
+    "OTEL_SERVICE_NAME", default="drf-enterprise-information-platform"
+)
 
 LOG_LEVEL = env("LOG_LEVEL", default="INFO")
 

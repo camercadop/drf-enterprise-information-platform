@@ -84,6 +84,29 @@ Two complementary patterns for extending behavior:
 
 Both plugin settings live inside the `REST_FRAMEWORK` configuration dict.
 
+## Docker Compose Services
+
+The `docker-compose.yml` defines the following services for local development:
+
+- `postgres` — PostgreSQL 16
+- `redis` — Redis 7
+- `app` — Django application
+- `celery` — Celery worker
+- `otel-collector` — OpenTelemetry Collector
+- `tempo` — Grafana Tempo (traces)
+- `prometheus` — Prometheus (metrics)
+- `grafana` — Grafana (dashboards)
+
+## Observability
+
+All dev infra configuration for OpenTelemetry, Prometheus, and Grafana lives under `infra/`. This keeps platform observability assets separate from application code and makes the infrastructure reusable across environments.
+
+| Directory | Purpose |
+|-----------|---------|
+| `infra/otel-collector-config.yaml` | OTel Collector pipelines and exporters |
+| `infra/prometheus.yml` | Prometheus scrape configuration |
+| `infra/grafana/provisioning/` | Datasource and dashboard provisioning for Grafana |
+
 ## Dependency Injection
 
 Runtime dependencies (plugins, storage backends, pipeline processors) are resolved from dotted-path strings in settings via `core.module_resolver`:

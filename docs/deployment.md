@@ -39,6 +39,10 @@ How to run the platform in production — environment configuration, infrastruct
 | PostgreSQL | 16+ | Primary database and Celery result backend (`async_tasks` schema) |
 | Redis | 7+ | Cache, token blacklist backend, and Celery broker |
 | Python | 3.14+ | Application runtime |
+| OpenTelemetry Collector | latest | Receives telemetry from instrumented services |
+| Tempo | latest | Distributed tracing backend |
+| Prometheus | latest | Metrics backend |
+| Grafana | latest | Observability dashboards |
 
 ### Minimum Resources (per instance)
 
@@ -80,13 +84,19 @@ The project includes a multi-stage Dockerfile optimized for production:
 
 ```bash
 # Build and run
-docker compose up -d   # Starts PostgreSQL, Redis, the app, and the Celery worker
+docker compose up -d   # Starts PostgreSQL, Redis, the app, Celery, and the observability stack
 
 # Build image standalone
 docker build -t eip:latest .
 ```
 
 The app service uses Gunicorn bound to port 8000. The Celery worker uses the same image with a different entrypoint (`celery -A config worker`). Static files are collected at build time.
+
+The observability stack exposes:
+- Prometheus at `http://localhost:9090`
+- Tempo at `http://localhost:3200`
+- Grafana at `http://localhost:3000` (default credentials: `admin` / `admin`)
+- OTel Collector OTLP endpoints at `localhost:4317` (gRPC) and `localhost:4318` (HTTP)
 
 ---
 
