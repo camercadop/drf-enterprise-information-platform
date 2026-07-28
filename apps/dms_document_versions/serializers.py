@@ -27,6 +27,9 @@ class DocumentVersionSerializer(DefaultModelSerializer):
 
     def pre_create(self, validated_data: dict[str, Any]) -> None:
         document = validated_data["document"]
-        last = DocumentVersion.objects.filter(document=document).order_by("-version").first()
+        last = (
+            DocumentVersion.objects.filter(document=document)
+            .order_by("-version")
+            .first()
+        )
         validated_data["version"] = (last.version + 1) if last else 1
-

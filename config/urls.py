@@ -11,6 +11,7 @@ from drf_spectacular.views import (
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("apps.iam_auth.urls")),
+    path("api/mfa/", include("apps.iam_mfa.urls")),
     path("api/sys/", include("apps.sys_user_event.urls")),
     path("api/tenants/", include("apps.tenants.urls")),
     path("api/tenant-settings/", include("apps.tenant_settings.urls")),

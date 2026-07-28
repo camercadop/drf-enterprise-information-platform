@@ -68,9 +68,7 @@ class TenantSettingSerializer(serializers.ModelSerializer):  # type: ignore[type
                 try:
                     jsonschema.validate(coerced, json_schema)
                 except jsonschema.ValidationError as e:
-                    raise serializers.ValidationError(
-                        {"value": e.message}
-                    ) from e
+                    raise serializers.ValidationError({"value": e.message}) from e
 
         return attrs
 

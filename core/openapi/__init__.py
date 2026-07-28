@@ -28,9 +28,7 @@ class AutoSchema(SpectacularAutoSchema):
     each pagination class via get_paginated_response_schema.
     """
 
-    def _get_response_bodies(
-        self, direction: Direction = "response"
-    ) -> dict[str, Any]:
+    def _get_response_bodies(self, direction: Direction = "response") -> dict[str, Any]:
         responses: dict[str, Any] = super()._get_response_bodies(direction)
 
         for status_code, response in responses.items():

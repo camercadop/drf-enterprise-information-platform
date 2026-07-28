@@ -85,12 +85,12 @@ class TenantSettingViewSet(
         Response is unpaginated.
         """
         catalog = self._public_catalog()
-        saved: dict[str, TenantSetting] = {
-            s.key: s for s in self.get_queryset()
-        }
+        saved: dict[str, TenantSetting] = {s.key: s for s in self.get_queryset()}
         instances = [
             saved.get(key) or self._make_default(key, entry)
             for key, entry in catalog.items()
         ]
-        serializer = TenantSettingListSerializer(instances, many=True, context=self.get_serializer_context())
+        serializer = TenantSettingListSerializer(
+            instances, many=True, context=self.get_serializer_context()
+        )
         return Response(serializer.data)

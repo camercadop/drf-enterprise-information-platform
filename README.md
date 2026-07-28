@@ -33,7 +33,9 @@ This platform solves these problems once — so domain teams can focus on busine
 | Framework | Django 6 + Django REST Framework |
 | Database | PostgreSQL 16 |
 | Cache | Redis 7 |
+| Async Processing | Celery (broker: Redis) |
 | Auth | JWT (simplejwt) with token blacklisting |
+| Observability | OpenTelemetry, Prometheus, Grafana |
 | Containers | Docker + Docker Compose |
 | Quality | Ruff, mypy, pre-commit |
 | Testing | Pytest, Factory Boy |
@@ -47,6 +49,7 @@ This platform solves these problems once — so domain teams can focus on busine
 - **Soft-delete** — default deletion strategy with `deleted_at`/`deleted_by` fields
 - **Audit trail** — automatic write-operation logging via `sys_audit` plugin
 - **Tenant settings** — per-tenant configuration catalog with schema validation
+- **Event bus** — Redis-based domain event publishing with retry and dead-letter queue
 
 ### Architecture
 
@@ -58,21 +61,24 @@ This platform solves these problems once — so domain teams can focus on busine
 
 - **Standard API envelope** — consistent `{status, data}` response format
 - **JWT authentication** — short-lived access tokens, rotating refresh tokens, tenant context in claims
+- **MFA** — TOTP-based multi-factor authentication with backup codes and per-tenant enforcement
 - **IP filtering & lockout** — per-tenant IP allowlisting and brute-force lockout
+- **Idempotency** — Redis-backed idempotency middleware for mutating requests
 - **Health check** — unauthenticated endpoint for infrastructure monitoring
 
 ## Extended Capabilities
 
 Beyond core functionality, the platform includes comprehensive enterprise features:
 
-- **Identity Management** — Teams, MFA, authentication auditing
-- **API Management** — Registry, versioning, rate limiting, webhooks, analytics
-- **Event Platform** — Domain events, Redis-based event bus, retry mechanisms
-- **Background Processing** — Celery tasks, scheduling, monitoring
-- **Data Management** — Import/export, validation, transformations, bulk jobs
-- **Audit & Governance** — Comprehensive audit logs, change history, data retention
-- **Notifications** — Email, webhooks, and roadmap channels (WhatsApp, Slack, Teams)
-- **Search Extensions** — Dataset search, indexing, ranking capabilities
+- **Identity Management** — Teams, MFA (TOTP), authentication auditing, user events
+- **Document Management** — Upload, versioning, metadata, categories, ingestion pipeline
+- **API Management** — Versioning, rate limiting, OpenAPI docs
+- **Event Platform** — Domain events, Redis-based event bus, retry, dead-letter queue
+- **Background Processing** — Celery tasks with Redis broker
+- **Observability** — OpenTelemetry tracing and metrics, Prometheus, Grafana dashboards
+- **Audit & Governance** — Comprehensive audit logs, soft delete, tenant settings
+- **Notifications** — Email, webhooks (roadmap)
+- **Search Extensions** — Filters, ordering; full-text search (roadmap)
 
 ## Platform Roadmap
 
@@ -90,6 +96,7 @@ The platform evolves through structured phases:
 apps/               # Domain modules
 core/               # Framework foundations (base classes, utils, shared infrastructure)
 config/             # Django settings, URLs, ASGI/WSGI
+infra/              # OTel Collector, Prometheus, and Grafana provisioning configs
 docs/               # Documentation
 tests/              # Test suite
 ```

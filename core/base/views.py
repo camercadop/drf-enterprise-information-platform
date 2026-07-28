@@ -97,7 +97,11 @@ class BaseGenericViewSet(viewsets.GenericViewSet):
         """Prepare raw request data before serializer instantiation on create."""
         if hasattr(self, "parent_lookup_fields") and self.parent_lookup_fields:
             extra = {
-                (url_kwarg.removesuffix("_id") if url_kwarg.endswith("_id") else url_kwarg): self.kwargs[url_kwarg]
+                (
+                    url_kwarg.removesuffix("_id")
+                    if url_kwarg.endswith("_id")
+                    else url_kwarg
+                ): self.kwargs[url_kwarg]
                 for url_kwarg in self.parent_lookup_fields
                 if url_kwarg in self.kwargs
             }

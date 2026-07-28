@@ -54,9 +54,7 @@ class TenantInjectionSerializerPlugin(SerializerPlugin):
         if "tenant_id" in validated_data:
             current_tenant_id = str(instance.tenant_id)  # type: ignore[attr-defined]
             if validated_data["tenant_id"] != current_tenant_id:
-                raise PermissionDeniedError(
-                    "Tenant reassignment is not allowed."
-                )
+                raise PermissionDeniedError("Tenant reassignment is not allowed.")
             del validated_data["tenant_id"]
 
 

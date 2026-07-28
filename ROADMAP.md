@@ -12,17 +12,22 @@
 
 - ✅ JWT
 - ✅ Refresh Tokens
+- ✅ MFA (TOTP)
 
 ### Users
 
 - ✅ CRUD
 - ✅ Roles
+- ✅ Teams
 
 ### Documents
 
 - ✅ Upload
 - Download
 - ✅ Metadata
+- ✅ Versioning
+- ✅ Categories
+- ✅ Ingestion Pipeline
 
 ### Infrastructure
 
@@ -51,6 +56,9 @@
 ### Security
 
 - ✅ RBAC
+- ✅ MFA
+- ✅ IP Filtering & Lockout
+- ✅ Idempotency
 - ABAC
 - API Keys
 - OAuth2
@@ -79,8 +87,9 @@
 
 ### Observability
 
-- Metrics
-- Tracing
+- ✅ Metrics (Prometheus)
+- ✅ Tracing (OpenTelemetry + Tempo)
+- ✅ Dashboards (Grafana)
 - Structured Logging
 
 ---

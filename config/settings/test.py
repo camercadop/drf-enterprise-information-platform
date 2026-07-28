@@ -24,3 +24,10 @@ CACHES = {
 
 # OpenTelemetry: disable exporters during tests to avoid noisy output
 OTEL_EXPORTER = "none"
+
+AUTH_MFA = {
+    "ENCRYPTION_KEYS": ["test-encryption-key-for-tests-only"],
+    "issuer": "Test Platform",
+    "backup_code_count": 5,
+    "backup_code_length": 8,
+}

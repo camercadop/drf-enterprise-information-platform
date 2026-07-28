@@ -45,7 +45,10 @@ def build_pipeline() -> list[Processor]:
     Returns:
         A list of Processor instances ready to be called sequentially.
     """
-    return [resolve_instance(path) for path in settings.APP_DMS_INGESTION["PIPELINE_PROCESSORS"]]
+    return [
+        resolve_instance(path)
+        for path in settings.APP_DMS_INGESTION["PIPELINE_PROCESSORS"]
+    ]
 
 
 class ChecksumProcessor:
@@ -71,7 +74,9 @@ class ChecksumProcessor:
             digest.update(chunk)
         session.checksum = digest.hexdigest()
         file.seek(0)
-        logger.info("Checksum computed for session %s: %s", session.id, session.checksum)
+        logger.info(
+            "Checksum computed for session %s: %s", session.id, session.checksum
+        )
 
 
 class MetadataProcessor:
@@ -89,4 +94,6 @@ class MetadataProcessor:
         """
         _, ext = os.path.splitext(session.filename)
         session.extension = ext.lower() or None
-        logger.info("Extension derived for session %s: %s", session.id, session.extension)
+        logger.info(
+            "Extension derived for session %s: %s", session.id, session.extension
+        )

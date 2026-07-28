@@ -67,14 +67,19 @@ class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
         Returns:
             JWT token pair response on success.
         """
-        email: str = request.data.get("email", "") if isinstance(request.data, dict) else ""
+        email: str = (
+            request.data.get("email", "") if isinstance(request.data, dict) else ""
+        )
 
         ip: str = get_client_ip(request)
 
         if is_locked(email):
             logger.warning("Login blocked: account locked email=%s", email)
             AuthAttemptLog.objects.create(
-                email=email, ip_address=ip, success=False, failure_reason="account_locked"
+                email=email,
+                ip_address=ip,
+                success=False,
+                failure_reason="account_locked",
             )
             raise serializers.ValidationError(
                 {"detail": "Account is locked due to too many failed login attempts."},
@@ -86,7 +91,10 @@ class LoginView(TokenObtainPairView):  # type: ignore[type-arg]
         except AuthenticationFailed:
             logger.warning("Login failed: invalid credentials email=%s", email)
             AuthAttemptLog.objects.create(
-                email=email, ip_address=ip, success=False, failure_reason="invalid_credentials"
+                email=email,
+                ip_address=ip,
+                success=False,
+                failure_reason="invalid_credentials",
             )
             login_failed.send(sender=self.__class__, email=email)
             raise
@@ -186,13 +194,11 @@ class UnlockAccountView(APIView):
             if not tenant_id:
                 return Response(status=status.HTTP_403_FORBIDDEN)
 
-            membership = (
-                request.user.memberships.filter(
-                    tenant_id=tenant_id,
-                    is_active=True,
-                    is_admin=True,
-                ).first()
-            )
+            membership = request.user.memberships.filter(
+                tenant_id=tenant_id,
+                is_active=True,
+                is_admin=True,
+            ).first()
             if not membership:
                 return Response(status=status.HTTP_403_FORBIDDEN)
 

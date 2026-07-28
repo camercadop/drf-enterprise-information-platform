@@ -6,12 +6,13 @@ JWT-based authentication with token blacklisting, tenant context, password manag
 
 | Method | URL | Auth | Description |
 |--------|-----|------|-------------|
-| POST | `/api/auth/login/` | No | Returns access + refresh tokens and user info |
+| POST | `/api/auth/login/` | No | Returns access + refresh tokens and user info, or MFA challenge if MFA is active |
 | POST | `/api/auth/refresh/` | No | Returns a new access token (rotates refresh token) |
 | POST | `/api/auth/logout/` | Yes | Blacklists the provided refresh token |
 | POST | `/api/auth/logout-all/` | Yes | Blacklists all outstanding refresh tokens for the user |
 | POST | `/api/auth/password/change/` | Yes | Changes password and returns a new access token |
 | POST | `/api/auth/unlock/{email}/` | Yes | Unlocks a locked account (tenant admin or superuser only) |
+| — | `/api/auth/mfa/*` | — | MFA enrollment, verification, and management — see [iam_mfa](../iam_mfa/README.md) |
 
 ## Account Lockout
 
@@ -79,8 +80,32 @@ Behavior:
 - Multiple memberships without `tenant_id` → error with code `tenant_required` and `available_tenants` list
 - Invalid `tenant_id` → error with code `invalid_tenant`
 - No active memberships → error with code `no_tenant_membership`
+- Active MFA device found → returns MFA challenge instead of tokens (see [MFA Login Flow](#mfa-login-flow))
+- Tenant requires MFA but no device enrolled → error with code `mfa_setup_incomplete`
 
 The resolved `tenant_id` is stored in the JWT claims for downstream use.
+
+### MFA Login Flow
+
+When the authenticated user has an active MFA device, login does not return tokens. Instead it returns a short-lived challenge token:
+
+```json
+{
+    "status": "OK",
+    "data": {
+        "mfa_required": true,
+        "challenge_token": "<signed JWT, valid 5 minutes>"
+    }
+}
+```
+
+The client must then call `POST /api/auth/mfa/login-verify/` with the challenge token and a TOTP code (or backup code) to receive the real token pair. See [iam_mfa](../iam_mfa/README.md) for the verify endpoint contract.
+
+The challenge token:
+- Is signed with `SECRET_KEY` via HS256
+- Carries `{user_id, tenant_id, type: "mfa_challenge"}`
+- Expires after 5 minutes
+- Cannot be used to authenticate any other request
 
 ## User Object
 
@@ -126,7 +151,13 @@ sequenceDiagram
     participant Blacklist
 
     Client->>API: POST /login/ (email, password, tenant_id?)
-    API-->>Client: {status: OK, data: {access, refresh, user}}
+    alt No MFA
+        API-->>Client: {status: OK, data: {access, refresh, user}}
+    else MFA active
+        API-->>Client: {status: OK, data: {mfa_required: true, challenge_token}}
+        Client->>API: POST /mfa/login-verify/ (challenge_token, code)
+        API-->>Client: {status: OK, data: {access, refresh, user}}
+    end
 
     Client->>API: POST /refresh/ (refresh)
     API->>Blacklist: blacklist old refresh
@@ -244,6 +275,7 @@ Beyond login errors (documented above), other endpoints return:
 | Password change | History reuse | `{"new_password": ["Cannot reuse any of your last 5 passwords."]}` |
 | Password change | Confirmation mismatch | `{"new_password_confirmation": ["Passwords do not match."]}` |
 | Login | Password expired | `{"detail": "Your password has expired. Please change it to continue."}` with code `password_expired` |
+| Login | MFA required, no device enrolled | `{"detail": "MFA is required for this tenant. Please enroll a device first."}` with code `mfa_setup_incomplete` |
 | Any authenticated endpoint | Missing or invalid access token | `{"detail": "...", "code": "not_authenticated"}` |
 
 ## JWT Claims

@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def get_attribute(user: User, tenant: Tenant, attribute: str, default: str | None = None) -> str | None:
+def get_attribute(
+    user: User, tenant: Tenant, attribute: str, default: str | None = None
+) -> str | None:
     """Return the value of a user-tenant attribute, or `default` if not set.
 
     Args:

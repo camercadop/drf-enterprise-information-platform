@@ -35,7 +35,6 @@ class TenantListSerializer(serializers.ModelSerializer):  # type: ignore[type-ar
         fields = ["id", "name", "code", "is_active"]
 
 
-
 class MembershipListSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """Serializer for listing tenant memberships."""
 

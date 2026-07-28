@@ -22,7 +22,13 @@ class CustomPagination(PageNumberPagination):
         """OpenAPI schema matching the custom paginated response shape."""
         return {
             "type": "object",
-            "required": ["count", "page_size", "current_page", "total_pages", "results"],
+            "required": [
+                "count",
+                "page_size",
+                "current_page",
+                "total_pages",
+                "results",
+            ],
             "properties": {
                 "count": {"type": "integer"},
                 "page_size": {"type": "integer"},
@@ -53,7 +59,7 @@ class CustomPagination(PageNumberPagination):
                 if page_size > self.max_page_size:
                     page_size = self.max_page_size
                 return page_size
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 pass
         return self.page_size
 
@@ -81,7 +87,9 @@ class LargeResultsSetPagination(PageNumberPagination):
             }
         )
 
-    def paginate_queryset(self, queryset: Any, request: Request, view: Any = None) -> list[Any] | None:
+    def paginate_queryset(
+        self, queryset: Any, request: Request, view: Any = None
+    ) -> list[Any] | None:
         """
         Optimize pagination for large datasets.
         """
@@ -127,7 +135,9 @@ class OptimizedPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 500
 
-    def paginate_queryset(self, queryset: Any, request: Request, view: Any = None) -> list[Any] | None:
+    def paginate_queryset(
+        self, queryset: Any, request: Request, view: Any = None
+    ) -> list[Any] | None:
         """
         Optimized pagination with minimal overhead.
         """

@@ -13,5 +13,7 @@ class DocumentFactory(factory.django.DjangoModelFactory):
         model = Document
 
     tenant = factory.SubFactory(TenantFactory)
-    document_type = factory.SubFactory(DocumentTypeFactory, tenant=factory.SelfAttribute("..tenant"))
+    document_type = factory.SubFactory(
+        DocumentTypeFactory, tenant=factory.SelfAttribute("..tenant")
+    )
     title = factory.Sequence(lambda n: f"Document {n}")

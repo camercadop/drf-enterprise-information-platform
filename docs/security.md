@@ -63,6 +63,69 @@ These endpoints use `AllowAny` and do not require authentication:
 
 ---
 
+## MFA (Multi-Factor Authentication)
+
+TOTP-based MFA with per-tenant enforcement, encrypted secrets at rest, and a challenge token login flow.
+
+### Login Flow with MFA
+
+When a user has an active MFA device, `POST /api/auth/login/` does not issue tokens. Instead it returns a short-lived challenge token that must be exchanged at `POST /api/mfa/login-verify/`.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant DB
+
+    Client->>API: POST /api/auth/login/ {email, password, tenant_id?}
+    API->>DB: Validate credentials + resolve tenant membership
+    API->>DB: Enforce IP policy + password expiry
+    API->>DB: Check mfa_enforcement tenant setting
+    alt mfa_enforcement=required and no device enrolled
+        API-->>Client: 400 mfa_setup_incomplete
+    else Active MFA device found
+        API-->>Client: 200 {mfa_required: true, challenge_token}
+        Client->>API: POST /api/mfa/login-verify/ {challenge_token, code}
+        API->>API: Verify challenge token (signature, expiry, type claim)
+        API->>DB: Verify TOTP code or backup code
+        alt Valid
+            API-->>Client: 200 {access, refresh, user}
+        else Invalid
+            API-->>Client: 400 mfa_invalid_code
+        end
+    else No MFA device
+        API-->>Client: 200 {access, refresh, user}
+    end
+```
+
+### Challenge Token
+
+The challenge token is a short-lived signed JWT (HS256, 5-minute TTL) issued by `LoginSerializer` when an active MFA device is found. It carries a `type: mfa_challenge` claim that distinguishes it from real access tokens — it cannot be used to authenticate API requests.
+
+| Claim | Description |
+|-------|-------------|
+| `user_id` | UUID of the pre-authenticated user |
+| `tenant_id` | UUID of the resolved tenant |
+| `type` | Always `mfa_challenge` |
+| `exp` | Expiry — 5 minutes from issuance |
+
+Implementation: `apps/iam_mfa/services.py`.
+
+### Secret Encryption
+
+TOTP secrets are encrypted at rest using Fernet (AES-128-CBC + HMAC-SHA256). The key is derived from `AUTH_MFA["ENCRYPTION_KEYS"]` — a list where the first key encrypts and all keys attempt decryption, enabling zero-downtime key rotation via `MultiFernet`.
+
+Implementation: `apps/iam_mfa/encryption.py`.
+
+### Tenant Enforcement
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `mfa_enabled` | `false` | Whether MFA is available for this tenant |
+| `mfa_enforcement` | `optional` | `required` blocks login for users without an enrolled device |
+
+---
+
 ## Permission Model
 
 ### Hierarchy

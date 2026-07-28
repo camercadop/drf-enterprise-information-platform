@@ -32,6 +32,8 @@ class TenantMembershipFactory(factory.django.DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     tenant = factory.SubFactory(TenantFactory)
-    role = factory.SubFactory(TenantRoleFactory, tenant=factory.SelfAttribute("..tenant"))
+    role = factory.SubFactory(
+        TenantRoleFactory, tenant=factory.SelfAttribute("..tenant")
+    )
     is_admin = False
     is_active = True

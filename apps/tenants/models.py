@@ -91,6 +91,3 @@ class TenantSetting(models.Model):
 
     def __str__(self) -> str:
         return f"{self.tenant.code}:{self.key}"
-
-
-

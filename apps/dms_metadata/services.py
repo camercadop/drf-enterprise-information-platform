@@ -73,13 +73,14 @@ class MetadataValidationService:
 
         if definition.validation_rules:
             validate_rules(
-                definition.data_type, definition.validation_rules, value, f"Field '{code}'"
+                definition.data_type,
+                definition.validation_rules,
+                value,
+                f"Field '{code}'",
             )
 
     @staticmethod
-    def _validate_no_extra_fields(
-        metadata: dict[str, Any], definitions: Any
-    ) -> None:
+    def _validate_no_extra_fields(metadata: dict[str, Any], definitions: Any) -> None:
         """Reject metadata keys that have no corresponding MetadataDefinition.
 
         Args:
@@ -93,5 +94,7 @@ class MetadataValidationService:
         extra = set(metadata.keys()) - defined_codes
         if extra:
             raise ValidationError(
-                "Metadata contains undefined fields: {}.".format(", ".join(sorted(extra)))
+                "Metadata contains undefined fields: {}.".format(
+                    ", ".join(sorted(extra))
+                )
             )

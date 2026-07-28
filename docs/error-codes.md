@@ -43,6 +43,17 @@ These codes can be returned by any endpoint.
 
 Each endpoint documents its own error codes in the OpenAPI schema. Refer to the generated API documentation for per-endpoint error responses.
 
+### MFA Codes
+
+| Code | HTTP Status | Meaning | Client Action |
+|------|-------------|---------|---------------|
+| `mfa_required` | 401 | User has MFA enabled but did not provide a TOTP code | Prompt the user for a TOTP code |
+| `mfa_invalid_code` | 400 | The provided TOTP code is invalid | Ask the user to retry |
+| `mfa_not_setup` | 400 | User has no MFA device enrolled | Guide the user through MFA setup |
+| `mfa_backup_code_used` | 400 | The backup code has already been consumed | Ask the user for a different code |
+| `mfa_backup_code_invalid` | 400 | The backup code is invalid | Ask the user to retry |
+| `mfa_setup_incomplete` | 400 | MFA setup is not yet complete | Prompt the user to complete setup |
+
 ---
 
 ## Field Validation Errors

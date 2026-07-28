@@ -104,7 +104,9 @@ class BaseCreateAPITest(BaseAPITest):
         """
         raise NotImplementedError
 
-    def invalid_payloads(self) -> list[tuple[dict[str, Any], list[str | dict[str, str]] | None]]:
+    def invalid_payloads(
+        self,
+    ) -> list[tuple[dict[str, Any], list[str | dict[str, str]] | None]]:
         """Return a list of (payload, expected_error_fields) tuples for invalid creation.
 
         Raises:
@@ -168,9 +170,15 @@ class BaseCreateAPITest(BaseAPITest):
                     field_errors = data[field]
                     codes = [
                         getattr(e, "code", None)
-                        for e in (field_errors if isinstance(field_errors, list) else [field_errors])
+                        for e in (
+                            field_errors
+                            if isinstance(field_errors, list)
+                            else [field_errors]
+                        )
                     ]
-                    assert code in codes, f"Expected code '{code}' for field '{field}', got {codes}"
+                    assert code in codes, (
+                        f"Expected code '{code}' for field '{field}', got {codes}"
+                    )
 
 
 class BaseRetrieveAPITest(BaseAPITest):
@@ -306,7 +314,9 @@ class BaseUpdateAPITest(BaseAPITest):
         """
         raise NotImplementedError
 
-    def invalid_payloads(self) -> list[tuple[dict[str, Any], list[str | dict[str, str]] | None]]:
+    def invalid_payloads(
+        self,
+    ) -> list[tuple[dict[str, Any], list[str | dict[str, str]] | None]]:
         """Return a list of (payload, expected_error_fields) tuples for invalid update.
 
         Raises:
@@ -368,9 +378,15 @@ class BaseUpdateAPITest(BaseAPITest):
                     field_errors = data[field]
                     codes = [
                         getattr(e, "code", None)
-                        for e in (field_errors if isinstance(field_errors, list) else [field_errors])
+                        for e in (
+                            field_errors
+                            if isinstance(field_errors, list)
+                            else [field_errors]
+                        )
                     ]
-                    assert code in codes, f"Expected code '{code}' for field '{field}', got {codes}"
+                    assert code in codes, (
+                        f"Expected code '{code}' for field '{field}', got {codes}"
+                    )
 
 
 class BaseDeleteAPITest(BaseAPITest):

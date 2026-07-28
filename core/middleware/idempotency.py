@@ -56,7 +56,9 @@ class IdempotencyMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         cfg = _config()
-        guarded_methods: list[str] = cfg.get("GUARDED_METHODS", ["POST", "PUT", "PATCH", "DELETE"])
+        guarded_methods: list[str] = cfg.get(
+            "GUARDED_METHODS", ["POST", "PUT", "PATCH", "DELETE"]
+        )
         require_header: bool = cfg.get("REQUIRE_HEADER", False)
         ttl: int = cfg.get("TTL", 86400)
 
@@ -76,7 +78,9 @@ class IdempotencyMiddleware:
                     request.path,
                 )
                 return HttpResponse(
-                    content=json.dumps({"detail": "X-Idempotency-Key header is required."}),
+                    content=json.dumps(
+                        {"detail": "X-Idempotency-Key header is required."}
+                    ),
                     status=400,
                     content_type="application/json",
                 )
@@ -95,7 +99,11 @@ class IdempotencyMiddleware:
                     idempotency_key,
                 )
                 return HttpResponse(
-                    content=json.dumps({"detail": "A request with this idempotency key is already being processed."}),
+                    content=json.dumps(
+                        {
+                            "detail": "A request with this idempotency key is already being processed."
+                        }
+                    ),
                     status=409,
                     content_type="application/json",
                 )

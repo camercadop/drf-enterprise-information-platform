@@ -42,9 +42,7 @@ class TeamMembershipViewSet(
 ):
     """Manage team memberships (add/remove members from teams)."""
 
-    queryset = TeamMembership.objects.select_related(
-        "team", "membership__user"
-    )
+    queryset = TeamMembership.objects.select_related("team", "membership__user")
     serializer_class = TeamMembershipSerializer
     serializer_classes = {
         "create": TeamMembershipCreateSerializer,

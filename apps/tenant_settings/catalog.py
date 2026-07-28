@@ -70,7 +70,7 @@ TYPE_TO_SCHEMA_TYPE: dict[str, str] = {
 
 
 def validate_type_schema_consistency(
-    catalogs: list[tuple[str, dict[str, Any]]]
+    catalogs: list[tuple[str, dict[str, Any]]],
 ) -> list[str]:
     """Validate that type and schema.type are consistent within each entry.
 

@@ -33,7 +33,9 @@ class ForeignKeyField(serializers.PrimaryKeyRelatedField):
     ) -> None:
         self.base_filters = base_filters or {}
         self.context_filters = (
-            context_filters if context_filters is not None else {"tenant_id": "tenant_id"}
+            context_filters
+            if context_filters is not None
+            else {"tenant_id": "tenant_id"}
         )
         self.exclude_deleted = exclude_deleted
         self.custom_error_message = error_message
@@ -121,7 +123,9 @@ class ForeignKeyField(serializers.PrimaryKeyRelatedField):
             result[field_name] = value
         return result
 
-    def _resolve_field_value(self, field_name: str, instance: Any, serializer: Any | None = None) -> Any:
+    def _resolve_field_value(
+        self, field_name: str, instance: Any, serializer: Any | None = None
+    ) -> Any:
         """Resolve the value for a single field name against an instance.
 
         Resolution order:

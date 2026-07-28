@@ -40,6 +40,9 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
         return super().get_token(user)  # type: ignore[return-value]
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        from apps.iam_mfa.models import MFADevice
+        from apps.iam_mfa.services import issue_challenge_token
+
         tenant_id = attrs.pop("tenant_id", None)
         data: dict[str, Any] = super().validate(attrs)
 
@@ -48,6 +51,23 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
 
         self._enforce_ip_policy(resolved_tenant_id)
         self._enforce_password_expiry(membership)
+        self._enforce_mfa_enrollment(resolved_tenant_id)
+
+        device = MFADevice.objects.filter(
+            user=self.user, tenant_id=resolved_tenant_id, is_active=True
+        ).first()
+        if device:
+            logger.info(
+                "MFA challenge issued: user_id=%s tenant_id=%s",
+                self.user.pk,
+                resolved_tenant_id,
+            )
+            return {
+                "mfa_required": True,
+                "challenge_token": issue_challenge_token(
+                    str(self.user.pk), resolved_tenant_id
+                ),
+            }
 
         # Generate tokens with tenant_id claim
         refresh = self.get_token(self.user)
@@ -65,6 +85,42 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
             "tenant_id": resolved_tenant_id,
         }
         return data
+
+    def _enforce_mfa_enrollment(self, tenant_id: str) -> None:
+        """Block login when the tenant requires MFA but the user has no active device.
+
+        Reads `mfa_enforcement` from tenant settings. When set to `"required"` and
+        the user has no active MFA device, raises a ValidationError with code
+        `mfa_setup_incomplete`. Use this before issuing any token.
+
+        Args:
+            tenant_id: The resolved tenant UUID string.
+
+        Raises:
+            ValidationError: With code `mfa_setup_incomplete` when enforcement is
+                required and no device is enrolled.
+        """
+        from apps.iam_mfa.models import MFADevice
+
+        enforcement = get_tenant_setting(tenant_id, "mfa_enforcement") or "optional"
+        if enforcement != "required":
+            return
+
+        has_device = MFADevice.objects.filter(
+            user=self.user, tenant_id=tenant_id, is_active=True
+        ).exists()
+        if not has_device:
+            logger.warning(
+                "Login blocked: MFA required but not enrolled user_id=%s tenant_id=%s",
+                self.user.pk,
+                tenant_id,
+            )
+            raise serializers.ValidationError(
+                {
+                    "detail": "MFA is required for this tenant. Please enroll a device first."
+                },
+                code="mfa_setup_incomplete",
+            )
 
     def _enforce_password_expiry(self, membership: TenantMembership) -> None:
         """Raise a validation error if the user's password has expired for this tenant.
@@ -92,7 +148,9 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
                     tenant_id,
                 )
                 raise serializers.ValidationError(
-                    {"detail": "Your password has expired. Please change it to continue."},
+                    {
+                        "detail": "Your password has expired. Please change it to continue."
+                    },
                     code="password_expired",
                 )
 
@@ -180,7 +238,9 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
         blocklist: list[str] = json.loads(raw_blocklist)
 
         if is_ip_blocked(ip, allowlist, blocklist):
-            logger.warning("Login blocked: IP not allowed ip=%s tenant_id=%s", ip, tenant_id)
+            logger.warning(
+                "Login blocked: IP not allowed ip=%s tenant_id=%s", ip, tenant_id
+            )
             exc = PermissionDenied(detail="Login not allowed from this IP address.")
             exc.detail.code = "ip_blocked"  # type: ignore[union-attr]
             raise exc
@@ -211,8 +271,7 @@ class LoginSerializer(TokenObtainPairSerializer):  # type: ignore[type-arg]
 
         # User has multiple tenants and didn't specify which one
         available = [
-            {"id": str(m.tenant_id), "name": m.tenant.name}
-            for m in memberships
+            {"id": str(m.tenant_id), "name": m.tenant.name} for m in memberships
         ]
         raise serializers.ValidationError(
             {
@@ -295,6 +354,7 @@ class PasswordChangeSerializer(serializers.Serializer):  # type: ignore[type-arg
         tenant_id = get_tenant_id(self.context["request"])
         if tenant_id:
             from apps.tenants.models import Tenant
+
             tenant = Tenant.objects.filter(pk=tenant_id).first()
             if tenant:
                 delete_attribute(user, tenant, "password_expires_at")

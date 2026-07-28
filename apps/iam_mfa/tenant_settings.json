@@ -1,0 +1,25 @@
+{
+  "settings": {
+    "mfa_enabled": {
+      "label": "MFA enabled",
+      "namespace": "security",
+      "type": "boolean",
+      "default": "false",
+      "private": false,
+      "schema": {
+        "type": "boolean"
+      }
+    },
+    "mfa_enforcement": {
+      "label": "MFA enforcement",
+      "namespace": "security",
+      "type": "string",
+      "default": "optional",
+      "private": false,
+      "schema": {
+        "type": "string",
+        "enum": ["optional", "required", "disabled"]
+      }
+    }
+  }
+}

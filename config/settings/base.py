@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.iam_roles",
     "apps.iam_users",
     "apps.iam_auth",
+    "apps.iam_mfa",
     "apps.dms_document_types",
     "apps.dms_documents",
     "apps.dms_document_versions",
@@ -281,6 +282,14 @@ AUTH_LOCKOUT = {
 
 AUTH_SESSION = {
     "MAX_CONCURRENT_SESSIONS": env.int("AUTH_MAX_CONCURRENT_SESSIONS", default=0),
+}
+
+AUTH_MFA = {
+    "issuer": env("AUTH_MFA_ISSUER", default="Enterprise Platform"),
+    "digits": env.int("AUTH_MFA_DIGITS", default=6),
+    "period": env.int("AUTH_MFA_PERIOD", default=30),
+    "backup_code_count": env.int("AUTH_MFA_BACKUP_CODE_COUNT", default=10),
+    "backup_code_length": env.int("AUTH_MFA_BACKUP_CODE_LENGTH", default=10),
 }
 
 SIMPLE_JWT = {

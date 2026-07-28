@@ -37,7 +37,9 @@ class SmartFilterBackend(DjangoFilterBackend):
     ``VIEWSET_FILTER_MULTI_VALUE_SEPARATOR`` in settings (default: ``,``).
     """
 
-    def get_filterset_class(self, view: Any, queryset: QuerySet[Any] | None = None) -> type | None:  # type: ignore[override]
+    def get_filterset_class(
+        self, view: Any, queryset: QuerySet[Any] | None = None
+    ) -> type | None:  # type: ignore[override]
         """Build a FilterSet class dynamically from filterset_fields with all supported lookups.
 
         Falls back to the default DjangoFilterBackend behaviour when
@@ -55,19 +57,29 @@ class SmartFilterBackend(DjangoFilterBackend):
         filter_fields: dict[str, filters.Filter] = {}
 
         for field_name in filterset_fields:
-            db_field = f"{field_name}_id" if _is_fk_field(model, field_name) else field_name
+            db_field = (
+                f"{field_name}_id" if _is_fk_field(model, field_name) else field_name
+            )
             for lookup in SUPPORTED_LOOKUPS:
                 key = field_name if lookup == "exact" else f"{field_name}__{lookup}"
 
                 if lookup == "in":
-                    def _make_in_filter(fname: str, sep: str, label: str) -> filters.BaseInFilter:  # type: ignore[type-arg]
+
+                    def _make_in_filter(
+                        fname: str, sep: str, label: str
+                    ) -> filters.BaseInFilter:  # type: ignore[type-arg]
                         class _InFilter(filters.BaseInFilter):  # type: ignore[type-arg]
-                            def filter(self, qs: QuerySet[Any], value: str) -> QuerySet[Any]:
+                            def filter(
+                                self, qs: QuerySet[Any], value: str
+                            ) -> QuerySet[Any]:
                                 if value:
                                     values = [v.strip() for v in value.split(sep)]
                                     return super().filter(qs, values)
                                 return qs
-                        return _InFilter(field_name=fname, lookup_expr="in", label=label)
+
+                        return _InFilter(
+                            field_name=fname, lookup_expr="in", label=label
+                        )
 
                     filter_fields[key] = _make_in_filter(db_field, separator, key)
                 else:

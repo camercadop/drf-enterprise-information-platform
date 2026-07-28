@@ -54,9 +54,15 @@ class UserEvent(models.Model):
         db_table = "sys_user_events"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["actor", "created_at"], name="idx_user_event_actor_time"),
-            models.Index(fields=["tenant", "created_at"], name="idx_user_event_tenant_time"),
-            models.Index(fields=["category", "event"], name="idx_user_event_category_event"),
+            models.Index(
+                fields=["actor", "created_at"], name="idx_user_event_actor_time"
+            ),
+            models.Index(
+                fields=["tenant", "created_at"], name="idx_user_event_tenant_time"
+            ),
+            models.Index(
+                fields=["category", "event"], name="idx_user_event_category_event"
+            ),
         ]
 
     def __str__(self) -> str:
@@ -102,8 +108,12 @@ class AuthAttemptLog(models.Model):
         db_table = "sys_auth_attempts"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["email", "created_at"], name="idx_auth_attempt_email_time"),
-            models.Index(fields=["ip_address", "created_at"], name="idx_auth_attempt_ip_time"),
+            models.Index(
+                fields=["email", "created_at"], name="idx_auth_attempt_email_time"
+            ),
+            models.Index(
+                fields=["ip_address", "created_at"], name="idx_auth_attempt_ip_time"
+            ),
         ]
 
     def __str__(self) -> str:

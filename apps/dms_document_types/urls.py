@@ -9,5 +9,8 @@ router = DefaultRouter()
 router.register("", DocumentTypeViewSet, basename="document_type")
 
 urlpatterns = router.urls + [
-    path("<uuid:document_type_id>/metadata-definitions/", include("apps.dms_metadata.urls")),
+    path(
+        "<uuid:document_type_id>/metadata-definitions/",
+        include("apps.dms_metadata.urls"),
+    ),
 ]

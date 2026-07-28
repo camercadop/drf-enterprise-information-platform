@@ -84,7 +84,6 @@ class MetadataDefinition(TenantAwareModel):
             ),
         ]
 
-
     def __str__(self) -> str:
         return f"{self.code} ({self.document_type}) - {self.name}"
 
@@ -101,4 +100,6 @@ class MetadataDefinition(TenantAwareModel):
             validate_validation_rules(self.data_type, self.validation_rules)
 
         if self.default_value is not None:
-            validate_default_value(self.data_type, self.default_value, self.validation_rules)
+            validate_default_value(
+                self.data_type, self.default_value, self.validation_rules
+            )

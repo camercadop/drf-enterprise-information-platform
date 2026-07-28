@@ -63,7 +63,9 @@ class MetadataDefinitionSerializer(DefaultModelSerializer):
             try:
                 validate_validation_rules(data_type, validation_rules)
             except DjangoValidationError as e:
-                raise serializers.ValidationError({"validation_rules": e.message}) from e
+                raise serializers.ValidationError(
+                    {"validation_rules": e.message}
+                ) from e
 
         if data_type and default_value is not None:
             try:

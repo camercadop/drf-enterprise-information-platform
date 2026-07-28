@@ -46,9 +46,7 @@ def validate_mime_type(mime_type: str) -> None:
     allowed: list[str] = settings.APP_DMS_INGESTION["ALLOWED_MIME_TYPES"]
     if allowed and mime_type not in allowed:
         logger.warning("MIME type %s is not allowed", mime_type)
-        raise ValidationError(
-            f"MIME type '{mime_type}' is not allowed."
-        )
+        raise ValidationError(f"MIME type '{mime_type}' is not allowed.")
 
 
 def validate_extension(filename: str) -> None:
@@ -68,7 +66,7 @@ def validate_extension(filename: str) -> None:
     _, ext = os.path.splitext(filename)
     ext = ext.lower()
     if ext not in allowed:
-        logger.warning("File extension %s is not allowed for filename %s", ext, filename)
-        raise ValidationError(
-            f"File extension '{ext}' is not allowed."
+        logger.warning(
+            "File extension %s is not allowed for filename %s", ext, filename
         )
+        raise ValidationError(f"File extension '{ext}' is not allowed.")

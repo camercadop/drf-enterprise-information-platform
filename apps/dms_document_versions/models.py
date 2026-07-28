@@ -51,7 +51,9 @@ class DocumentVersion(TenantAwareModel):
     )
     # Storage backend used to persist this version's file
 
-    storage_key = models.CharField(max_length=500, null=True, blank=True, editable=False)
+    storage_key = models.CharField(
+        max_length=500, null=True, blank=True, editable=False
+    )
     # Backend-specific key or path used to retrieve the file
 
     storage_state = models.CharField(
