@@ -35,6 +35,7 @@ Provides base classes that all domain modules inherit from. This layer defines:
 - **Permissions** — Tenant-aware permission classes
 - **Pagination** — Configurable pagination strategies
 - **Filters** — Base filter classes with common fields
+- **Middleware** — Platform-level middleware (idempotency)
 - **Celery** — Custom `TaskResultBackend` with Postgres UUID primary keys and `async_tasks` schema isolation
 
 ### apps/ — Domain Modules

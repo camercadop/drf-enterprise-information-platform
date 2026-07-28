@@ -238,15 +238,24 @@ GET /api/tenants/?include_deleted=true
 
 ---
 
-## Tenant Context
+## Idempotency
 
-Most endpoints are tenant-scoped. The tenant is resolved from the JWT `tenant_id` claim — clients do not pass it as a query parameter or header. Resources outside the authenticated tenant are invisible (404).
+Write requests can be made safe to retry by including the `X-Idempotency-Key` header. The platform deduplicates requests per authenticated user and returns the original cached response on replay.
+
+```
+X-Idempotency-Key: <client-generated-unique-key>
+```
+
+- The key is client-generated (e.g. a UUID). The platform does not generate or validate its format.
+- Scope is per user — the same key from two different users is treated as two independent requests.
+- Cached responses are retained for a configurable TTL (default: 24 hours).
+- A concurrent duplicate (same key while the first is in-flight) returns `409 Conflict`.
+- Unauthenticated requests bypass idempotency entirely.
+
+See [Security](security.md#idempotency) for configuration details.
 
 ---
 
-## Idempotency
+## Tenant Context
 
-- `GET`, `PUT`, `DELETE` are idempotent
-- `POST` is not idempotent by default (repeated calls create duplicate resources)
-- Some `POST` endpoints are idempotent by design (e.g., login, logout, deactivate). These are documented individually and safe to retry
-- Custom actions (`POST /resource/<id>/action/`) document their idempotency individually
+Most endpoints are tenant-scoped. The tenant is resolved from the JWT `tenant_id` claim — clients do not pass it as a query parameter or header. Resources outside the authenticated tenant are invisible (404).

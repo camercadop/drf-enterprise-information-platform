@@ -423,6 +423,36 @@ Implementation: `apps/iam_auth/serializers.py`.
 
 ---
 
+## Idempotency
+
+Write requests can be deduplicated using the `X-Idempotency-Key` header. When provided, the platform caches the response in Redis and returns it on replay without re-executing the request.
+
+**Scope:** authenticated requests only. Unauthenticated requests bypass idempotency.
+
+**Behavior:**
+
+| Scenario | Response |
+|----------|----------|
+| First request with key | Processed normally, response cached |
+| Replay of completed request | Cached response returned with original status code |
+| Key in-flight (concurrent duplicate) | `409 Conflict` |
+| Header absent, `REQUIRE_HEADER=False` | Processed normally (no deduplication) |
+| Header absent, `REQUIRE_HEADER=True` | `400 Bad Request` |
+
+**Redis key shape:** `idempotency:{user_id}:{idempotency_key}`
+
+**Configuration** (`config/settings/base.py` under `APP_SAFETY_IDEMPOTENCY`):
+
+| Setting | Env var | Default | Description |
+|---------|---------|---------|-------------|
+| `TTL` | `IDEMPOTENCY_TTL` | `86400` | Seconds to retain cached responses |
+| `REQUIRE_HEADER` | `IDEMPOTENCY_REQUIRE_HEADER` | `False` | Reject write requests missing the header |
+| `GUARDED_METHODS` | — | `POST, PUT, PATCH, DELETE` | HTTP methods subject to deduplication |
+
+Implementation: `core/middleware/idempotency.py`.
+
+---
+
 ## Audit Trail
 
 Every state-changing operation (create, update, delete) produces an immutable audit record per ADR-009. See [Data Model](data-model.md#system-audit) for schema details.

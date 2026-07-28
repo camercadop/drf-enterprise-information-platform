@@ -55,6 +55,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.tenants.middleware.TenantContextMiddleware",
     "apps.tenants.middleware.TenantTelemetryMiddleware",
+    "core.middleware.idempotency.IdempotencyMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -236,6 +237,12 @@ APP_DMS_INGESTION = {
         "apps.dms_ingestion.processors.MetadataProcessor",
     ],
     "STORAGE_NAME_GENERATOR": "apps.dms_ingestion.storage.generate_storage_name",
+}
+
+APP_SAFETY_IDEMPOTENCY = {
+    "TTL": env.int("IDEMPOTENCY_TTL", default=86400),
+    "REQUIRE_HEADER": env.bool("IDEMPOTENCY_REQUIRE_HEADER", default=False),
+    "GUARDED_METHODS": ["POST", "PUT", "PATCH", "DELETE"],
 }
 
 APP_SYS_EVENTBUS = {

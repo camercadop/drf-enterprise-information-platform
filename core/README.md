@@ -104,6 +104,12 @@ Permission classes for access control.
 - `IsOwnerOrReadOnly` — write access restricted to object owner
 - `IsSuperUser` — access restricted to platform superusers
 
+### middleware/
+
+Platform-level Django middleware.
+
+- `IdempotencyMiddleware` — deduplicates write requests via `X-Idempotency-Key` header using Redis. Scoped per authenticated user. Unauthenticated requests bypass it. Configured via `APP_SAFETY_IDEMPOTENCY` in settings.
+
 ### utils/
 
 General-purpose utility functions.
