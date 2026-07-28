@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/iam/users/", include("apps.iam_users.urls")),
     path("api/dms/document-types/", include("apps.dms_document_types.urls")),
     path("api/dms/documents/", include("apps.dms_documents.urls")),
+    path("api/dms/ingestion/", include("apps.dms_ingestion.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/schema/swagger-ui/",

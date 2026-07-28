@@ -6,7 +6,7 @@
 
 - ✅ Layered Architecture
 - Dependency Injection
-- Domain Events
+- ✅ Domain Events
 
 ### Authentication
 
@@ -20,7 +20,7 @@
 
 ### Documents
 
-- Upload
+- ✅ Upload
 - Download
 - Metadata
 
@@ -70,7 +70,7 @@
 - Webhooks
 - S3
 - Azure Blob
-- Event Bus
+- ✅ Event Bus
 
 ### Operations
 

@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     "apps.dms_documents",
     "apps.dms_document_versions",
     "apps.sys_eventbus",
+    "apps.dms_ingestion",
+    "storages",
 ]
 
 AUTH_USER_MODEL = "iam_users.User"
@@ -113,6 +115,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_CREDENTIALS = True
@@ -200,6 +204,28 @@ LOGGING = {
     },
 }
 
+
+APP_DMS_INGESTION = {
+    "STORAGE_BACKEND": env(
+        "DMS_INGESTION_STORAGE_BACKEND",
+        default="django.core.files.storage.FileSystemStorage",
+    ),
+    "STORAGE_LOCATION": env(
+        "DMS_INGESTION_STORAGE_LOCATION",
+        default=str(BASE_DIR / "media" / "ingestion"),
+    ),
+    "MAX_FILE_SIZE_BYTES": env.int(
+        "DMS_INGESTION_MAX_FILE_SIZE_BYTES",
+        default=DATA_UPLOAD_MAX_MEMORY_SIZE,
+    ),
+    "ALLOWED_MIME_TYPES": [],
+    "ALLOWED_EXTENSIONS": [],
+    "PIPELINE_PROCESSORS": [
+        "apps.dms_ingestion.processors.ChecksumProcessor",
+        "apps.dms_ingestion.processors.MetadataProcessor",
+    ],
+    "STORAGE_NAME_GENERATOR": "apps.dms_ingestion.storage.generate_storage_name",
+}
 
 APP_SYS_EVENTBUS = {
     "STREAM_NAME": env("EVENTBUS_STREAM_NAME", default="sys:eventbus"),

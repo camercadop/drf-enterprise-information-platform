@@ -252,4 +252,42 @@ erDiagram
 - `DeadLetterEvent` preserves the full envelope payload for manual inspection and potential reprocessing. Never deleted by application logic.
 - `tenant_id` on `DeadLetterEvent` is nullable to support platform-level (non-tenant-scoped) events.
 
+---
 
+## DMS Ingestion (dms_ingestion)
+
+```mermaid
+erDiagram
+    Tenant ||--o{ UploadSession : "owns"
+    User ||--o{ UploadSession : "creates / updates"
+
+    UploadSession {
+        UUID id PK
+        UUID tenant_id FK
+        VARCHAR title
+        VARCHAR document_type
+        VARCHAR filename
+        VARCHAR mime_type
+        BIGINT size
+        VARCHAR checksum
+        VARCHAR extension
+        VARCHAR state
+        VARCHAR storage_key
+        TEXT error_detail
+        UUID created_by_id FK
+        UUID updated_by_id FK
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+```
+
+**Table:** `dms_ingestion_upload_sessions`
+
+**Design decisions:**
+- `UploadSession` has no FK to `Document` — it is decoupled from `dms_documents` by design. Once the pipeline completes, a `document.created` event is published and `dms_documents` owns document creation.
+- `document_type` is a `CharField`, not a FK — it stores the canonical `DocumentType.name` validated at session creation. This avoids a hard dependency between `dms_ingestion` and `dms_document_types`.
+- `checksum` and `extension` are populated by the pipeline (`ChecksumProcessor`, `MetadataProcessor`) after the file is uploaded — they are null until the pipeline runs.
+- `storage_key` is the opaque path returned by the configured storage backend after the file is written.
+- `error_detail` is set on transition to `FAILED` and records the human-readable failure reason.

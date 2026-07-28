@@ -1,0 +1,39 @@
+{
+  "resources": {
+    "upload_sessions": {
+      "label": "Upload Sessions",
+      "actions": {
+        "view": {
+          "label": "View upload sessions",
+          "readonly": true,
+          "default_roles": {
+            "owner": 1,
+            "admin": 1,
+            "member": 1,
+            "viewer": 1
+          }
+        },
+        "create": {
+          "label": "Create upload sessions",
+          "readonly": false,
+          "default_roles": {
+            "owner": 1,
+            "admin": 1,
+            "member": 1,
+            "viewer": 0
+          }
+        },
+        "upload": {
+          "label": "Upload file to session",
+          "readonly": false,
+          "default_roles": {
+            "owner": 1,
+            "admin": 1,
+            "member": 1,
+            "viewer": 0
+          }
+        }
+      }
+    }
+  }
+}
