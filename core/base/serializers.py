@@ -6,12 +6,12 @@ from typing import Any
 
 from django.conf import settings
 from django.db import models
-from django.utils.module_loading import import_string
 from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework.fields import Field
 
 from core.base.plugins import SerializerPlugin
+from core.module_resolver import resolve
 
 
 class BaseSerializer(serializers.ModelSerializer):
@@ -54,7 +54,7 @@ class BaseSerializer(serializers.ModelSerializer):
         rest_framework: dict[str, Any] = getattr(settings, "REST_FRAMEWORK", {})
         global_paths: list[str] = rest_framework.get("DEFAULT_SERIALIZER_PLUGINS", [])
         global_plugins: list[type[SerializerPlugin]] = [
-            import_string(path) for path in global_paths
+            resolve(path) for path in global_paths
         ]
         local_plugins: list[type[SerializerPlugin]] = getattr(
             self.Meta, "extensions", []

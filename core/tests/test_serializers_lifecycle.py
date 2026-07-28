@@ -160,7 +160,7 @@ class TestBaseSerializerGetPlugins:
                 "core.tests.test_serializers_lifecycle.RecordingPlugin"
             ]
         }
-        with patch("core.base.serializers.import_string", return_value=RecordingPlugin):
+        with patch("core.module_resolver.resolve", return_value=RecordingPlugin):
             serializer = FakeSerializer()
             plugins = serializer._get_plugins()
         assert len(plugins) == 1

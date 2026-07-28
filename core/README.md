@@ -112,3 +112,11 @@ General-purpose utility functions.
 - `request` — HTTP request inspection and data extraction
 - `security` — cryptographic operations, secrets handling, and data protection
 - `validators` — reusable field-level and cross-field validation logic
+
+### module_resolver
+
+Runtime dependency resolution. Use when a class or callable is configured as a
+dotted path in settings and needs to be imported at runtime.
+
+- `resolve(dotted_path)` — imports and returns the object at the given dotted path
+- `resolve_instance(dotted_path)` — imports, instantiates with no arguments, and returns the object

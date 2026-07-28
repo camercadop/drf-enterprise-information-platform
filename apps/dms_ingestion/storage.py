@@ -6,7 +6,6 @@ APP_DMS_INGESTION["STORAGE_BACKEND"] without changing any call sites.
 Swap the filename generator via APP_DMS_INGESTION["STORAGE_NAME_GENERATOR"].
 """
 
-import importlib
 import io
 import logging
 from abc import ABC, abstractmethod
@@ -16,6 +15,8 @@ from typing import IO, Protocol
 
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
+
+from core.module_resolver import resolve, resolve_instance
 
 logger = logging.getLogger(__name__)
 
@@ -229,8 +230,8 @@ class InMemoryStorageBackend(BaseStorageBackend):
 def _resolve_name_generator() -> Callable[[str, IO[bytes]], str]:
     """Resolve the configured storage name generator callable.
 
-    Reads APP_DMS_INGESTION["STORAGE_NAME_GENERATOR"] and imports it via
-    importlib. Falls back to generate_storage_name if the key is absent.
+    Reads APP_DMS_INGESTION["STORAGE_NAME_GENERATOR"] and resolves it via
+    core.module_resolver.resolve. Falls back to generate_storage_name if the key is absent.
 
     Returns:
         The resolved StorageNameGenerator callable.
@@ -239,24 +240,16 @@ def _resolve_name_generator() -> Callable[[str, IO[bytes]], str]:
         "STORAGE_NAME_GENERATOR",
         "apps.dms_ingestion.storage.generate_storage_name",
     )
-    module_path, fn_name = dotted_path.rsplit(".", 1)
-    module = importlib.import_module(module_path)
-    return getattr(module, fn_name)  # type: ignore[no-any-return]
+    return resolve(dotted_path)  # type: ignore[no-any-return]
 
 
 def get_storage_backend() -> StorageProvider:
     """Instantiate and return the configured storage backend.
 
-    Resolves APP_DMS_INGESTION["STORAGE_BACKEND"] and
-    APP_DMS_INGESTION["STORAGE_NAME_GENERATOR"] via importlib, then
-    instantiates the backend class with the name generator injected.
-    Raises ImportError or AttributeError if either path is invalid.
+    Resolves APP_DMS_INGESTION["STORAGE_BACKEND"] via core.module_resolver.resolve_instance.
+    Raises ImportError or AttributeError if the path is invalid.
 
     Returns:
         An instantiated StorageProvider implementation.
     """
-    dotted_path: str = settings.APP_DMS_INGESTION["STORAGE_BACKEND"]
-    module_path, class_name = dotted_path.rsplit(".", 1)
-    module = importlib.import_module(module_path)
-    cls = getattr(module, class_name)
-    return cls()  # type: ignore[no-any-return]
+    return resolve_instance(settings.APP_DMS_INGESTION["STORAGE_BACKEND"])  # type: ignore[no-any-return]

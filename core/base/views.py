@@ -6,11 +6,11 @@ from typing import Any
 
 from django.conf import settings
 from django.db.models import Model, QuerySet
-from django.utils.module_loading import import_string
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.permissions import BasePermission, IsAuthenticated
 
 from core.base.plugins import ViewSetPlugin
+from core.module_resolver import resolve_instance
 
 
 class BaseGenericViewSet(viewsets.GenericViewSet):
@@ -158,7 +158,7 @@ class BaseGenericViewSet(viewsets.GenericViewSet):
         """
         rest_framework: dict[str, Any] = getattr(settings, "REST_FRAMEWORK", {})
         global_paths: list[str] = rest_framework.get("DEFAULT_VIEWSET_PLUGINS", [])
-        return [import_string(path)() for path in global_paths]
+        return [resolve_instance(path) for path in global_paths]
 
     def _run_plugins(self, hook: str, *args: Any) -> None:
         """Dispatch a named hook to all registered viewset plugins.

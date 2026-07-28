@@ -84,6 +84,15 @@ Two complementary patterns for extending behavior:
 
 Both plugin settings live inside the `REST_FRAMEWORK` configuration dict.
 
+## Dependency Injection
+
+Runtime dependencies (plugins, storage backends, pipeline processors) are resolved from dotted-path strings in settings via `core.module_resolver`:
+
+- `resolve(dotted_path)` — imports and returns the object at the path
+- `resolve_instance(dotted_path)` — imports and instantiates with no arguments
+
+Swap any dependency by changing its dotted path in settings — no call sites change. All plugin systems, storage backends, and pipeline processors use these helpers as the single resolution mechanism.
+
 
 ## Background Processing
 

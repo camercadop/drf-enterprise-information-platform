@@ -5,7 +5,6 @@ in place. Processors are stateless and run sequentially by services.run_pipeline
 """
 
 import hashlib
-import importlib
 import logging
 import os
 from typing import IO, Protocol
@@ -13,6 +12,7 @@ from typing import IO, Protocol
 from django.conf import settings
 
 from apps.dms_ingestion.models import UploadSession
+from core.module_resolver import resolve_instance
 
 logger = logging.getLogger(__name__)
 
@@ -39,19 +39,13 @@ def build_pipeline() -> list[Processor]:
     """Instantiate and return the configured pipeline processors in order.
 
     Resolves each dotted path in APP_DMS_INGESTION["PIPELINE_PROCESSORS"] via
-    importlib and instantiates the class. Raises ImportError or AttributeError
-    if a path is invalid.
+    core.module_resolver.resolve_instance. Raises ImportError or AttributeError if a path
+    is invalid.
 
     Returns:
         A list of Processor instances ready to be called sequentially.
     """
-    processors: list[Processor] = []
-    for dotted_path in settings.APP_DMS_INGESTION["PIPELINE_PROCESSORS"]:
-        module_path, class_name = dotted_path.rsplit(".", 1)
-        module = importlib.import_module(module_path)
-        cls = getattr(module, class_name)
-        processors.append(cls())
-    return processors
+    return [resolve_instance(path) for path in settings.APP_DMS_INGESTION["PIPELINE_PROCESSORS"]]
 
 
 class ChecksumProcessor:

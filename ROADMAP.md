@@ -5,7 +5,7 @@
 ### Architecture
 
 - ✅ Layered Architecture
-- Dependency Injection
+- ✅ Dependency Injection
 - ✅ Domain Events
 
 ### Authentication
