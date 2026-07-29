@@ -113,6 +113,7 @@ class MFABackupCodesView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        request=MFABackupCodeSerializer,
         responses={200: MFABackupCodeSerializer},
     )
     def post(self, request: Request) -> Response:
