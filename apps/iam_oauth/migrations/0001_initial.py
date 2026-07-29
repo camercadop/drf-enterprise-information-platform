@@ -112,6 +112,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='oauth2refreshtoken',
-            index=models.Index(fields=['user_id', 'is_revoked'], name='idx_oauth_refresh_token_user_revoked'),
+            index=models.Index(fields=['user_id', 'is_revoked'], name='idx_oauth_rt_user_revoked'),
         ),
     ]
