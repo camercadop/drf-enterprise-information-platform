@@ -42,7 +42,10 @@ class AuditSerializerPlugin(SerializerPlugin):
     ) -> None:
         actor = self._get_actor(serializer)
         if not actor:
-            return
+            raise RuntimeError(
+                "AuditSerializerPlugin: no actor in request context — "
+                "write operations require an authenticated request."
+            )
 
         log_audit(
             actor=actor,
@@ -58,7 +61,10 @@ class AuditSerializerPlugin(SerializerPlugin):
     ) -> None:
         actor = self._get_actor(serializer)
         if not actor:
-            return
+            raise RuntimeError(
+                "AuditSerializerPlugin: no actor in request context — "
+                "write operations require an authenticated request."
+            )
 
         log_audit(
             actor=actor,
@@ -96,7 +102,10 @@ class AuditViewSetPlugin(ViewSetPlugin):
         """Log a delete audit entry after successful destruction."""
         request = getattr(viewset, "request", None)
         if not request or not hasattr(request, "user") or not request.user:
-            return
+            raise RuntimeError(
+                "AuditViewSetPlugin: no actor in request context — "
+                "destroy operations require an authenticated request."
+            )
 
         model: type[models.Model] = type(instance)
         target_type: str = model._meta.label_lower

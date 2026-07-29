@@ -7,6 +7,7 @@ and domain event publishing.
 import logging
 
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
 from apps.dms_ingestion.models import UploadSession
 from apps.dms_ingestion.processors import build_pipeline
@@ -28,6 +29,9 @@ def run_pipeline(session_id: str) -> None:
     event. Transitions the session state at each stage. On any failure the
     session is transitioned to FAILED with error_detail set.
 
+    Idempotent — if the session is already in DOCUMENT_CREATED state, returns
+    immediately without re-publishing the event.
+
     Args:
         session_id: UUID string of the UploadSession to process.
 
@@ -37,6 +41,11 @@ def run_pipeline(session_id: str) -> None:
         Exception: If any processor raises an unexpected error.
     """
     session = UploadSession.objects.get(pk=session_id)
+
+    if session.state == UploadSession.State.DOCUMENT_CREATED:
+        logger.info("Pipeline already completed for session %s — skipping.", session_id)
+        return
+
     storage = get_storage_backend()
 
     if not session.storage_key:
@@ -65,24 +74,29 @@ def run_pipeline(session_id: str) -> None:
 
     _transition(session, str(UploadSession.State.READY))
 
-    publish(
-        event_type="document.created",
-        payload={
-            "session_id": str(session.id),
-            "title": session.title,
-            "document_type": session.document_type,
-            "filename": session.filename,
-            "mime_type": session.mime_type,
-            "size": session.size,
-            "checksum": session.checksum,
-            "extension": session.extension,
-            "storage_key": session.storage_key,
-        },
-        tenant_id=str(session.tenant_id),
-        actor_id=str(session.created_by_id) if session.created_by_id else None,
-    )
+    event_payload = {
+        "session_id": str(session.id),
+        "title": session.title,
+        "document_type": session.document_type,
+        "filename": session.filename,
+        "mime_type": session.mime_type,
+        "size": session.size,
+        "checksum": session.checksum,
+        "extension": session.extension,
+        "storage_key": session.storage_key,
+    }
+    tenant_id = str(session.tenant_id)
+    actor_id = str(session.created_by_id) if session.created_by_id else None
 
-    _transition(session, str(UploadSession.State.DOCUMENT_CREATED))
+    with transaction.atomic():
+        publish(
+            event_type="document.created",
+            payload=event_payload,
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+        )
+        _transition(session, str(UploadSession.State.DOCUMENT_CREATED))
+
     logger.info("Pipeline completed for session %s", session_id)
 
 

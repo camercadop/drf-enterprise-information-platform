@@ -120,7 +120,9 @@ class TestLifecycleHooks:
         viewset.pre_destroy = lambda i: called.append("pre")  # type: ignore[assignment]
         viewset.post_destroy = lambda i: called.append("post")  # type: ignore[assignment]
 
-        viewset.perform_destroy(instance)
+        with MagicMock() as mock_plugins:
+            viewset._get_plugins = lambda: []  # type: ignore[assignment]
+            viewset.perform_destroy(instance)
 
         instance.delete.assert_called_once()
         assert called == ["pre", "post"]

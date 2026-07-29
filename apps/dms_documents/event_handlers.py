@@ -33,19 +33,16 @@ def handle_document_created(envelope: EventEnvelope) -> None:
     document_type_name: str | None = payload.get("document_type")
     document_type_id: Any = None
     if document_type_name and tenant_id:
-        dt = DocumentType.objects.filter(
-            tenant_id=tenant_id,
-            name__iexact=document_type_name,
-        ).first()
-        if dt:
-            document_type_id = dt.pk
-        else:
-            logger.warning(
-                "DocumentType not found tenant_id=%s name=%s session_id=%s",
-                tenant_id,
-                document_type_name,
-                payload.get("session_id"),
+        try:
+            document_type_id = DocumentType.objects.values_list("id", flat=True).get(
+                tenant_id=tenant_id,
+                name__iexact=document_type_name,
             )
+        except DocumentType.DoesNotExist as err:
+            raise ValueError(
+                f"DocumentType '{document_type_name}' not found for tenant {tenant_id} "
+                f"(session_id={payload.get('session_id')})"
+            ) from err
 
     document = Document.objects.create(
         tenant_id=tenant_id,

@@ -38,14 +38,13 @@ class TestAuditSerializerPluginOnPostCreate:
         entry = AuditLog.objects.get(target_id=instance.pk)
         assert entry.changes == representation
 
-    def test_skips_when_no_actor(self) -> None:
+    def test_raises_when_no_actor(self) -> None:
         plugin = AuditSerializerPlugin()
         serializer = self._make_serializer(actor=None)
         instance = self._make_instance()
 
-        plugin.on_post_create(serializer, instance)
-
-        assert not AuditLog.objects.exists()
+        with pytest.raises(RuntimeError, match="no actor in request context"):
+            plugin.on_post_create(serializer, instance)
 
     def _make_serializer(
         self, actor: Any = None, representation: dict[str, Any] | None = None
@@ -89,6 +88,14 @@ class TestAuditSerializerPluginOnPostUpdate:
         entry = AuditLog.objects.get(target_id=instance.pk)
         assert entry.changes == {"name": {"old": "Old", "new": "New"}}
 
+    def test_raises_when_no_actor(self) -> None:
+        plugin = AuditSerializerPlugin()
+        serializer = self._make_serializer(actor=None)
+        instance = self._make_instance()
+
+        with pytest.raises(RuntimeError, match="no actor in request context"):
+            plugin.on_post_update(serializer, instance)
+
     def _make_serializer(
         self, actor: Any, validated_data: dict[str, Any] | None = None
     ) -> MagicMock:
@@ -124,6 +131,17 @@ class TestAuditViewSetPluginOnPostDestroy:
         entry = AuditLog.objects.get(target_id=instance.pk)
         assert entry.action == "delete"
         assert entry.changes == {}
+
+    def test_raises_when_no_actor(self) -> None:
+        from apps.sys_audit.plugins import AuditViewSetPlugin
+
+        plugin = AuditViewSetPlugin()
+        viewset = MagicMock()
+        viewset.request = None
+        instance = self._make_instance()
+
+        with pytest.raises(RuntimeError, match="no actor in request context"):
+            plugin.on_post_destroy(viewset, instance)
 
     def _make_viewset(self, actor: Any) -> MagicMock:
         viewset = MagicMock()
