@@ -200,7 +200,7 @@ class OAuth2RefreshToken(TenantAwareModel):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["token"], name="idx_oauth_refresh_token_token"),
-            models.Index(fields=["client", "is_revoked"], name="idx_oauth_refresh_token_client_revoked"),
+            models.Index(fields=["client", "is_revoked"], name="idx_oauth_rt_client_revoked"),
             models.Index(fields=["user_id", "is_revoked"], name="idx_oauth_refresh_token_user_revoked"),
         ]
 
