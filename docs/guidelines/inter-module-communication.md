@@ -42,7 +42,13 @@ Arrows represent allowed dependency direction. Dotted lines represent forbidden 
 | `apps/iam_users` | `core/`, `apps/tenants`, `apps/iam_roles` |
 | `apps/iam_roles` | `core/`, `apps/tenants` |
 | `apps/iam_auth` | `core/`, `apps/tenants`, `apps/iam_users` |
-| Any new app | `core/`, `apps/tenants`, `apps/iam_users`, `apps/iam_roles` |
+| `apps/sys_audit` | `core/` (platform infrastructure — no domain deps) |
+| `apps/sys_eventbus` | `core/` (platform infrastructure — no domain deps) |
+| `apps/sys_permissions` | `core/`, `apps/tenants`, `apps/iam_roles` |
+| `apps/sys_user_event` | `core/`, `apps/iam_users`, `apps/tenants` |
+| `apps/sys_health` | `core/` |
+| `apps/tenant_settings` | `core/`, `apps/tenants` |
+| Any new domain app | `core/`, `apps/tenants`, `apps/iam_users`, `apps/iam_roles`, `apps/sys_eventbus`, `apps/tenant_settings` |
 
 ---
 

@@ -184,6 +184,7 @@ GitHub Actions runs on every push to `main`/`dev` and PRs targeting either branc
 - [Security](docs/security.md)
 - [Code Style](docs/code-style.md)
 - [Data Model](docs/data-model.md)
+- [Redis Reference](docs/redis-reference.md)
 - [Development Guide](docs/development.md)
 - [Deployment](docs/deployment.md)
 - [Testing](docs/testing.md)

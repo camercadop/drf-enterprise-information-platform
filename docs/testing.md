@@ -1,5 +1,27 @@
 # Testing
 
+This document is the **reference inventory** for the test suite — what exists, how it's
+configured, and what shared infrastructure is available. It answers: *"What does the test
+suite look like?"*
+
+It does not cover how to write a new test. For that, see
+[Writing Tests](guidelines/writing-tests.md).
+
+**What belongs here:**
+- pytest configuration and settings
+- Directory structure and file naming conventions
+- Available fixtures and factories (inventory)
+- Base class hierarchy and what each class provides (inventory)
+- Patterns that exist in the codebase but aren't obvious from the code alone
+
+**What belongs in [Writing Tests](guidelines/writing-tests.md) instead:**
+- How to implement a test for a new endpoint
+- How to write a factory or add a fixture
+- How to assert responses correctly
+- Decision guide for choosing the right base class
+
+---
+
 ## Running Tests
 
 ```bash
@@ -91,6 +113,7 @@ Shared fixtures are defined in `tests/fixtures/` and wired via `pytest_plugins` 
 - `tenant` — a tenant
 - `role` — a tenant role
 - `membership` — links `user` to `tenant`
+- `superuser_membership` — links `superuser` to `tenant`
 - `auth_client` — `APIClient` with JWT containing `tenant_id` claim
 - `superuser_client` — same for superuser
 
@@ -195,6 +218,20 @@ class TestTenantActivate(BaseActionAPITest):
     http_method = "post"
 ```
 
+### Service Layer Tests
+
+Service-layer logic lives in `services.py` per app and is tested in `test_services.py`.
+These tests are plain pytest classes — no base class needed. Use `@pytest.mark.django_db`
+only when the service touches the database:
+
+```python
+@pytest.mark.django_db
+class TestMyService:
+    def test_does_something(self, membership):
+        result = my_service_function(tenant=membership.tenant)
+        assert result == expected
+```
+
 ### Unauthenticated Endpoints
 
 Endpoints that don't require auth (e.g., login, refresh) override `_setup_base`
@@ -210,3 +247,98 @@ class TestLoginView(BaseActionAPITest):
         self.user = user
         self.membership = membership
 ```
+
+## Serializer Unit Tests
+
+Use `make_serializer_with_tenant_context` from `tests/serializer_utils.py` to unit-test
+serializers that rely on tenant or user context (e.g. `TenantInjectionSerializerPlugin`,
+audit plugin) without going through the API layer:
+
+```python
+from tests.serializer_utils import make_serializer_with_tenant_context
+
+@pytest.mark.django_db
+class TestMySerializer:
+    def test_valid(self, membership, user):
+        serializer = make_serializer_with_tenant_context(
+            MySerializer,
+            {"field": "value"},
+            membership,
+            user,
+        )
+        assert serializer.is_valid(), serializer.errors
+```
+
+The helper builds a mock request with `request.auth["tenant_id"]` and `request.user` set,
+matching what the global plugins expect at runtime.
+
+## Unit Test Patterns
+
+### Mocking with `MagicMock`
+
+Use `unittest.mock.MagicMock` to isolate units from their dependencies without hitting
+the database or external services:
+
+```python
+from unittest.mock import MagicMock
+
+class TestMyProcessor:
+    def test_sets_field_on_session(self):
+        session = MagicMock()
+        MyProcessor().process(session, io.BytesIO(b"data"))
+        assert session.some_field == expected
+```
+
+### Overriding settings per test
+
+Use `django.test.override_settings` for settings-driven behavior:
+
+```python
+from django.test import override_settings
+
+class TestMyValidator:
+    def test_raises_when_limit_exceeded(self):
+        with override_settings(MY_APP={"MAX_SIZE": 1024}):
+            with pytest.raises(ValidationError):
+                validate_size(2048)
+```
+
+Use pytest-django's `settings` fixture for inline per-test overrides:
+
+```python
+class TestMyLogic:
+    def test_threshold_enforced(self, settings):
+        settings.MY_APP = {"MAX_ATTEMPTS": 3}
+        # test body
+```
+
+### Patching module-level dependencies
+
+Use `unittest.mock.patch` to replace a dependency for the duration of a test:
+
+```python
+from unittest.mock import patch
+
+class TestMyView:
+    def test_behaviour_when_flag_set(self):
+        with patch("apps.my_app.module.settings") as mock_settings:
+            mock_settings.MY_FEATURE = {"ENABLED": True}
+            # test body
+```
+
+## Cache-Dependent Tests
+
+Tests that exercise cache-backed logic (lockout, session limits, idempotency) must
+clear the cache before each test to prevent state leakage between runs:
+
+```python
+from django.core.cache import cache
+import pytest
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    cache.clear()
+```
+
+Place this fixture at the class or module level. Since `config.settings.test` replaces
+Redis with `LocMemCache`, `cache.clear()` is fast and safe in all environments.

@@ -25,7 +25,7 @@ class MFADevice(TenantAwareModel):
     # Whether this device is currently active and can be used for MFA challenges
 
     class Meta:
-        db_table = "iam_mfa_mfa_devices"
+        db_table = "iam_mfa_devices"
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
@@ -49,7 +49,7 @@ class MFABackupCode(BaseModel):
     # Whether this backup code has already been consumed
 
     class Meta:
-        db_table = "iam_mfa_mfa_backup_codes"
+        db_table = "iam_mfa_backup_codes"
         ordering = ["-created_at"]
 
     def __str__(self) -> str:

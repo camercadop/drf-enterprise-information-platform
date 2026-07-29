@@ -233,7 +233,7 @@ These domains complement the core capabilities and are part of the platform road
 ### Identity Additions
 
 - Teams
-- MFA (roadmap)
+- MFA (TOTP, backup codes, per-tenant enforcement)
 - Authentication Auditing
 
 ### API Management
@@ -243,7 +243,7 @@ Manages platform API consumption.
 - API Registry
 - API Versioning
 - API Keys
-- OAuth2 (roadmap)
+- OAuth2 (Authorization Code, Client Credentials, Refresh Token grants; RFC 7009 revocation; PKCE)
 - Rate Limiting
 - Quotas
 - Webhooks

@@ -79,6 +79,18 @@ All OAuth2 tokens are JWTs consistent with the platform's existing claims format
 
 Token revocation is supported via `POST /api/oauth/revoke/` (RFC 7009). Revoking a refresh token walks the entire rotation chain and revokes all descendants.
 
+### PKCE (Proof Key for Code Exchange)
+
+PKCE is enforced for public clients on the Authorization Code grant. Confidential clients may optionally include it.
+
+| Parameter | Description |
+|-----------|-------------|
+| `code_challenge` | Base64url-encoded challenge derived from the verifier |
+| `code_challenge_method` | `S256` (recommended) or `plain` |
+| `code_verifier` | Sent at token exchange; verified against the stored challenge |
+
+Enforcement: `generate_authorization_code` in `apps/iam_oauth/services.py` raises a validation error if a public client omits `code_challenge`. Verification runs in `consume_authorization_code` via `_verify_pkce`.
+
 See [iam_oauth README](../apps/iam_oauth/README.md) for the full endpoint reference, flow diagrams, and configuration.
 
 ---
@@ -533,6 +545,51 @@ Write requests can be deduplicated using the `X-Idempotency-Key` header. When pr
 | `GUARDED_METHODS` | — | `POST, PUT, PATCH, DELETE` | HTTP methods subject to deduplication |
 
 Implementation: `core/middleware/idempotency.py`.
+
+---
+
+## Security Headers
+
+Security headers are configured in `config/settings/prod.py` and apply to all production responses.
+
+| Header | Setting | Value |
+|--------|---------|-------|
+| `X-Content-Type-Options` | `SECURE_CONTENT_TYPE_NOSNIFF` | `nosniff` |
+| `X-XSS-Protection` | `SECURE_BROWSER_XSS_FILTER` | `1; mode=block` |
+| `X-Frame-Options` | `X_FRAME_OPTIONS` | `DENY` |
+| `Set-Cookie: Secure` (session) | `SESSION_COOKIE_SECURE` | `True` |
+| `Set-Cookie: Secure` (CSRF) | `CSRF_COOKIE_SECURE` | `True` |
+
+Note: `SECURE_SSL_REDIRECT` and `SECURE_HSTS_SECONDS` are not configured — TLS termination and HSTS are expected to be handled at the infrastructure layer (load balancer / reverse proxy).
+
+---
+
+## CORS
+
+Cross-Origin Resource Sharing is handled by `django-cors-headers` (`corsheaders.middleware.CorsMiddleware`), positioned before `CommonMiddleware` in the middleware stack.
+
+| Setting | Env var | Default | Description |
+|---------|---------|---------|-------------|
+| `CORS_ALLOWED_ORIGINS` | `CORS_ALLOWED_ORIGINS` | `[]` | Comma-separated list of allowed origins |
+| `CORS_ALLOW_CREDENTIALS` | — | `True` | Allows cookies and authorization headers in cross-origin requests |
+
+An empty `CORS_ALLOWED_ORIGINS` blocks all cross-origin requests. Origins must be set explicitly per environment — no wildcard is used.
+
+---
+
+## File Upload Security
+
+File uploads go through `apps/dms_ingestion`. Three validators run before any file is persisted, implemented in `apps/dms_ingestion/validators.py`.
+
+| Validator | Setting key | Default | Behavior |
+|-----------|-------------|---------|----------|
+| `validate_file_size` | `MAX_FILE_SIZE_BYTES` | 20 MB | Rejects files exceeding the limit |
+| `validate_mime_type` | `ALLOWED_MIME_TYPES` | `[]` | Rejects disallowed MIME types; empty list = no restriction |
+| `validate_extension` | `ALLOWED_EXTENSIONS` | `[]` | Rejects disallowed extensions; empty list = no restriction |
+
+Django's `DATA_UPLOAD_MAX_MEMORY_SIZE` is also set to 20 MB, enforcing the limit at the request parsing layer before the view is reached.
+
+All three settings are configurable under `APP_DMS_INGESTION` in `config/settings/base.py`.
 
 ---
 

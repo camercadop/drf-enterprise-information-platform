@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='mfa_devices', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'iam_mfa_mfa_devices',
+                'db_table': 'iam_mfa_devices',
                 'ordering': ['-created_at'],
             },
         ),
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
                 ('mfa_device', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='backup_codes', to='iam_mfa.mfadevice')),
             ],
             options={
-                'db_table': 'iam_mfa_mfa_backup_codes',
+                'db_table': 'iam_mfa_backup_codes',
                 'ordering': ['-created_at'],
             },
         ),

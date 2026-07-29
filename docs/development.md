@@ -55,14 +55,21 @@ Apps are grouped by naming convention. See [Architecture](architecture.md) for d
 drf-enterprise-information-platform/
   apps/           # Domain modules and infrastructure apps
   core/           # Framework foundations (base classes, utils, shared infrastructure)
-    base/         # Base models, serializers, views
-    exceptions/   # Custom exception hierarchy
+    base/         # Base classes for models, serializers, and views
+    celery/       # Celery configuration and task infrastructure
+    exceptions/   # Custom exception hierarchy and error handling
     fields/       # Custom DRF serializer fields
-    filters/      # Base filter classes
-    pagination/   # Pagination classes
-    permissions/  # Base permission classes
-    utils/        # Shared utilities
-    validators/   # Validation logic (model fields, functions, serializer-level)
+    filters/      # Reusable filter backends and base filter classes
+    middleware/   # Cross-cutting request/response middleware
+    openapi/      # OpenAPI schema generation and customization
+    pagination/   # Pagination strategies and base classes
+    permissions/  # Base permission classes and shared permission logic
+    renderers/    # API response formatting and rendering
+    serializers/  # Serializer base classes and plugin infrastructure
+    telemetry/    # Observability setup (tracing, metrics)
+    utils/        # Shared utility functions
+    validators/   # Reusable validation logic for models, fields, and serializers
+    module_resolver.py  # Runtime resolution of dotted-path class references
   config/         # Django settings, URLs, ASGI/WSGI
   docs/           # Documentation
   tests/          # Test suite
@@ -105,9 +112,6 @@ Interactive API docs are available at `/api/schema/swagger-ui/` (requires authen
 
 ```bash
 # Start all services
-./docker-up.sh
-
-# Or manually
 docker compose up -d
 
 # View logs

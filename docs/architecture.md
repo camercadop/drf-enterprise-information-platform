@@ -146,7 +146,7 @@ See [sys_eventbus README](../apps/sys_eventbus/README.md) for the full public AP
 
 ## Business Logic Layer
 
-There is no dedicated service layer. Business logic lives in models, serializers (via the lifecycle hooks and plugin system), and views. A service layer may be introduced for specific domains when complexity justifies it.
+Business logic lives primarily in models, serializers (via the lifecycle hooks and plugin system), and views. A `services.py` module is introduced per app when logic is too complex for a serializer hook or needs to be called from multiple entry points (e.g., views, tasks, signals). There is no platform-wide service layer — the decision is per-domain.
 
 ## Authentication
 

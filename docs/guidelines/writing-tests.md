@@ -1,6 +1,23 @@
 # Writing Tests
 
-How to write tests in this project — from choosing the right base class and wiring fixtures to structuring assertions and handling edge cases like unauthenticated endpoints.
+How to write tests in this project — from choosing the right base class and wiring fixtures
+to structuring assertions and handling edge cases like unauthenticated endpoints.
+
+This document is the **implementation guide** — it answers: *"How do I write a test for
+this?"* For the inventory of what already exists (fixtures, factories, base class
+hierarchy, pytest config), see [Testing](../testing.md).
+
+**What belongs here:**
+- How to use the base test classes with examples
+- How to write factories and fixtures
+- How to assert responses correctly
+- Decision guide for choosing the right approach
+
+**What belongs in [Testing](../testing.md) instead:**
+- pytest settings and configuration
+- Directory structure and file naming conventions
+- The full list of available fixtures and what they return
+- The base class hierarchy as an inventory
 
 ---
 
@@ -299,6 +316,7 @@ Shared fixtures live in `tests/fixtures/<domain>.py` and are wired via `pytest_p
 | `tenant` | `Tenant` | Active tenant |
 | `role` | `TenantRole` | Role in the test tenant |
 | `membership` | `TenantMembership` | Links `user` to `tenant` |
+| `superuser_membership` | `TenantMembership` | Links `superuser` to `tenant` |
 
 ### Adding a Fixture
 

@@ -20,12 +20,17 @@ erDiagram
     User ||--o{ UserPasswordHistory : "tracks"
     User ||--o{ UserTenantAttribute : "has many"
     User ||--o{ UserEvent : "emits"
+    User ||--o{ MFADevice : "has"
+    MFADevice ||--o{ MFABackupCode : "has"
     TenantRole ||--o{ TenantMembership : "assigned via"
     TenantMembership ||--o{ TeamMembership : "added via"
     Team ||--o{ TeamMembership : "has"
     DocumentType ||--o{ Document : "classifies"
     DocumentType ||--o{ MetadataDefinition : "defines"
     Document ||--o{ DocumentVersion : "versioned by"
+    Tenant ||--o{ OAuth2Client : "has"
+    OAuth2Client ||--o{ AuthorizationCode : "issues"
+    OAuth2Client ||--o{ OAuth2RefreshToken : "issues"
 ```
 
 ---
@@ -59,6 +64,112 @@ Apps inherit from the appropriate level:
 - `TenantAwareModel` — tenant-scoped domain entities (inherits `BaseModel` + adds tenant FK + `TenantManager`)
 
 Models that define their own schema but have a `tenant` FK also use `TenantManager` directly for ORM-level isolation (e.g., `Team`, `TenantSetting`, `TenantRole`, `TenantMembership`).
+
+---
+
+## Conventions
+
+### Table Names
+
+Every model sets `db_table` explicitly — Django's default naming is never used.
+
+Pattern: `{app_label}_{entity}` using snake_case.
+
+| Example | App | Entity |
+|---------|-----|--------|
+| `iam_users` | `iam_users` | users |
+| `iam_roles` | `iam_roles` | roles |
+| `sys_audit_log` | `sys_audit` | audit log |
+| `dms_documents` | `dms_documents` | documents |
+
+### Primary Keys
+
+All models use `UUIDField(primary_key=True, default=uuid.uuid4, editable=False)` — including models that do not inherit from `BaseModel`. Auto-increment integer PKs are not used.
+
+### Constraint Names
+
+Pattern: `unique_{description}` using snake_case.
+
+Examples: `unique_user_tenant`, `unique_role_per_tenant`, `unique_member_per_team`.
+
+### Index Names
+
+Pattern: `idx_{table_short}_{fields}` using snake_case. Maximum 30 characters (PostgreSQL identifier limit).
+
+Examples: `idx_audit_tenant_time`, `idx_oauth_rt_user_revoked`, `idx_auth_attempt_email_time`.
+
+### FK vs. Plain UUIDField
+
+Use a plain `UUIDField` instead of a FK when the referenced entity may be deleted and the record must survive:
+
+- `AuthorizationCode.user_id` — authorization codes outlive users
+- `OAuth2RefreshToken.user_id` — refresh tokens outlive users
+- `DeadLetterEvent.tenant_id` — DLQ entries are never deleted by application logic
+
+Use a proper FK when referential integrity must be enforced.
+
+### `on_delete` Choices
+
+| Strategy | When to use |
+|----------|-------------|
+| `CASCADE` | Tenant-owned resources — deleting the tenant removes all its data |
+| `PROTECT` | Role assignments — prevents orphaned memberships |
+| `SET_NULL` | Actor references on event/audit records — preserves history after user deletion |
+
+### Nullable `tenant` FK
+
+Platform-level models that may record non-tenant-scoped operations declare `tenant` as nullable (`null=True, blank=True`). This applies to `AuditLog`, `UserEvent`, and `AuthAttemptLog`.
+
+Tenant-scoped domain models (`TenantAwareModel` subclasses) never have a nullable `tenant`.
+
+### Denormalization
+
+Denormalize only to preserve identity context after a referenced entity is deleted. The pattern is: store the FK with `SET_NULL` and duplicate the human-readable identifier as a plain field.
+
+Example: `UserEvent.actor` (FK, `SET_NULL`) + `UserEvent.user_email` (plain field) — the email is preserved even after the user is deleted.
+
+### Append-Only Models
+
+Models that must be immutable block `update` and `delete` at both the manager and instance level by raising `NotImplementedError`. Convention alone is not sufficient — enforcement must be in code.
+
+Current append-only models: `AuditLog`.
+
+### Standard Field Names
+
+**Timestamps** — use consistent suffixes across all lifecycle fields.
+
+| Field | Type | Usage |
+|-------|------|-------|
+| `created_at` | `DateTimeField(auto_now_add=True)` | Set on insert |
+| `updated_at` | `DateTimeField(auto_now=True)` | Set on every save |
+| `deleted_at` | `DateTimeField` | Soft-delete timestamp; null means active |
+| `*_at` | `DateTimeField` | Any lifecycle transition (e.g. `expires_at`, `revoked_at`, `consumed_at`) |
+
+**Boolean flags** — always use the `is_` prefix.
+
+| Field | Usage |
+|-------|-------|
+| `is_active` | Whether the record is currently active |
+| `is_*` | Any binary state (e.g. `is_revoked`, `is_consumed`, `is_admin`) |
+
+**Actors / ownership**
+
+| Field | Usage |
+|-------|-------|
+| `created_by` | Who created the record |
+| `updated_by` | Who last updated the record |
+| `deleted_by` | Who deleted the record (plain `CharField`, not FK) |
+| `actor` | Who performed the action on audit/event models (`SET_NULL`) |
+| `owner` | Resource owner when distinct from creator |
+
+**Identifiers**
+
+| Field | Usage |
+|-------|-------|
+| `name` | Human-readable display name |
+| `code` | Programmatic identifier (slugs, internal keys) |
+| `kind` | Internal semantic type driving business logic (`TextChoices`) |
+| `state` | Lifecycle state (`TextChoices`) |
 
 ---
 
@@ -165,6 +276,7 @@ erDiagram
 - `UserProfile` separates mutable personal data from the auth-critical `User` table.
 - `is_admin` on `TenantMembership` provides a fast-path check — admins bypass permission checks entirely.
 - `UserTenantAttribute` stores arbitrary per-user, per-tenant state as text key-value rows. Delete the row to clear an attribute.
+- `is_superuser` and `is_staff` are provided by Django's `PermissionsMixin`; `groups` and `user_permissions` are also available through the mixin.
 
 ---
 
@@ -225,6 +337,118 @@ erDiagram
 - Stores the hashed password (never plaintext) each time a user changes their password.
 - On password change, the current hash is saved to history before the new password is set.
 - Validation rejects any new password that matches the last 5 entries (configurable via `PASSWORD_HISTORY_LIMIT`).
+
+---
+
+## MFA (iam_mfa)
+
+```mermaid
+erDiagram
+    User ||--o{ MFADevice : "has"
+    MFADevice ||--o{ MFABackupCode : "has"
+
+    MFADevice {
+        UUID id PK
+        UUID tenant_id FK
+        UUID user_id FK
+        TEXT secret
+        VARCHAR label
+        BOOLEAN is_active
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+
+    MFABackupCode {
+        UUID id PK
+        UUID mfa_device_id FK
+        VARCHAR code_hash
+        BOOLEAN is_used
+        DATETIME created_at
+    }
+```
+
+**Tables:** `iam_mfa_devices`, `iam_mfa_backup_codes`
+
+**Design decisions:**
+- `MFADevice` is `TenantAwareModel` — scoped to a tenant, soft-deletable.
+- `MFABackupCode` inherits from `BaseModel` (not tenant-scoped) — backup codes are tied to a specific MFA device rather than directly to a tenant boundary.
+- `MFADevice.secret` stores the encrypted TOTP secret (encrypted at rest using Fernet).
+- `MFABackupCode.code_hash` stores the hashed backup code (never plaintext).
+- `MFABackupCode.is_used` tracks whether a backup code has been consumed; once used, it cannot be reused.
+
+---
+
+## OAuth2 (iam_oauth)
+
+```mermaid
+erDiagram
+    Tenant ||--o{ OAuth2Client : "has"
+    OAuth2Client ||--o{ AuthorizationCode : "issues"
+    OAuth2Client ||--o{ OAuth2RefreshToken : "issues"
+
+    OAuth2Client {
+        UUID id PK
+        UUID tenant_id FK
+        VARCHAR client_id
+        VARCHAR client_secret
+        VARCHAR client_name
+        TEXT redirect_uris
+        TEXT grant_types
+        TEXT response_types
+        TEXT scope
+        BOOLEAN is_confidential
+        BOOLEAN is_active
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+
+    AuthorizationCode {
+        UUID id PK
+        UUID client_id FK
+        UUID tenant_id FK
+        VARCHAR code
+        URL redirect_uri
+        TEXT scope
+        VARCHAR code_challenge
+        VARCHAR code_challenge_method
+        UUID user_id
+        DATETIME expires_at
+        BOOLEAN is_consumed
+        DATETIME consumed_at
+        DATETIME created_at
+    }
+
+    OAuth2RefreshToken {
+        UUID id PK
+        UUID client_id FK
+        UUID tenant_id FK
+        UUID user_id
+        VARCHAR token UK
+        TEXT scope
+        DATETIME expires_at
+        BOOLEAN is_revoked
+        DATETIME revoked_at
+        UUID replaced_by_id FK
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+        VARCHAR deleted_by
+    }
+```
+
+**Tables:** `iam_oauth_clients`, `iam_oauth_authorization_codes`, `iam_oauth_refresh_tokens`
+
+**Design decisions:**
+- `OAuth2Client` inherits from `TenantAwareModel` but overrides the `tenant` FK with `related_name="oauth2_clients"`.
+- `AuthorizationCode.user_id` is a plain `UUIDField`, not a FK to `User` — authorization codes may reference users that no longer exist.
+- `OAuth2RefreshToken.user_id` is a plain `UUIDField`, not a FK to `User` — refresh tokens may reference users that no longer exist.
+- `OAuth2RefreshToken.replaced_by` is a self-referencing `OneToOneField` that supports refresh token rotation. When a refresh token is rotated, a new token is created and linked via `replaced_by`.
+- `AuthorizationCode` has a unique constraint on `(client, code)`.
+- `OAuth2RefreshToken` has a unique constraint on `token`.
 
 ---
 

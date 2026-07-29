@@ -61,7 +61,7 @@
 - ✅ Idempotency
 - ABAC
 - API Keys
-- OAuth2
+- ✅ OAuth2
 
 ### Administration
 
