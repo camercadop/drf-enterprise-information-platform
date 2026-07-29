@@ -2,31 +2,32 @@
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 
-_authorize_common = {
-    "summary": "OAuth2 authorization endpoint",
-    "description": (
-        "Validates the authorization request and issues an authorization code, "
-        "redirecting to the registered redirect_uri. Requires a valid user Bearer token."
-    ),
-    "auth": [{"TenantJWTAuth": []}],
-    "tags": ["OAuth2"],
-    "request": None,
-    "responses": {
-        302: OpenApiResponse(
-            description="Redirect to redirect_uri with authorization code"
-        ),
-        400: OpenApiResponse(description="Invalid request"),
-    },
+_AUTHORIZE_SUMMARY = "OAuth2 authorization endpoint"
+_AUTHORIZE_DESCRIPTION = (
+    "Validates the authorization request and issues an authorization code, "
+    "redirecting to the registered redirect_uri. Requires a valid user Bearer token."
+)
+_AUTHORIZE_RESPONSES = {
+    302: OpenApiResponse(description="Redirect to redirect_uri with authorization code"),
+    400: OpenApiResponse(description="Invalid request"),
 }
 
 OAuth2AuthorizeGetSchema = extend_schema(
     operation_id="oauth2_authorize_get",
-    **_authorize_common,
+    summary=_AUTHORIZE_SUMMARY,
+    description=_AUTHORIZE_DESCRIPTION,
+    tags=["OAuth2"],
+    request=None,
+    responses=_AUTHORIZE_RESPONSES,
 )
 
 OAuth2AuthorizePostSchema = extend_schema(
     operation_id="oauth2_authorize_post",
-    **_authorize_common,
+    summary=_AUTHORIZE_SUMMARY,
+    description=_AUTHORIZE_DESCRIPTION,
+    tags=["OAuth2"],
+    request=None,
+    responses=_AUTHORIZE_RESPONSES,
 )
 
 OAuth2TokenSchema = extend_schema(
