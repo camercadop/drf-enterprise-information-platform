@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "apps.iam_users",
     "apps.iam_auth",
     "apps.iam_mfa",
+    "apps.iam_oauth",
     "apps.dms_document_types",
     "apps.dms_documents",
     "apps.dms_document_versions",

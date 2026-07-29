@@ -87,6 +87,15 @@ Base path: `/api/tenants/`
 
 `Tenant` does **not** use soft-delete. It inherits from `models.Model` directly (not from `BaseModel`/`SoftDeletableModel`). Deleting a tenant is a hard delete with cascading removal of related settings, roles, and memberships.
 
+## Authentication (`authentication.py`)
+
+`TenantJWTAuthentication` extends simplejwt's `JWTAuthentication` with two behaviours:
+
+1. **Tenant scope binding** — after token validation, extracts `tenant_id` from claims and binds it to the request-scoped ContextVar via `bind_scope`. `TenantManager` reads this value to enforce ORM-level data isolation (ADR-004).
+2. **OAuth2 client credentials support** — tokens issued for the `client_credentials` grant carry no user identity (`sub` is the `client_id`). `get_user` detects `token_type_hint=client_credentials` and returns `AnonymousUser` instead of performing a DB lookup that would fail.
+
+All other token types (Authorization Code, Refresh Token) follow the standard simplejwt user resolution path.
+
 ## Utilities (`utils.py`)
 
 ### `get_tenant_id(request)`

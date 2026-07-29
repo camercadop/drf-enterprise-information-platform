@@ -159,6 +159,8 @@ Strategy: JWT with token blacklisting via `djangorestframework-simplejwt`.
 - Password changes enforce complexity rules (tenant-configurable) and prevent reuse of the last 5 passwords
 - "Logout all" invalidates every outstanding refresh token for the user
 
+The platform also includes an OAuth2 authorization server (`apps/iam_oauth`) supporting Authorization Code, Client Credentials, and Refresh Token grant types. OAuth2 tokens are JWTs with the same claims format. `TenantJWTAuthentication` handles both user tokens and OAuth2 client credentials tokens — the latter carry no user identity and resolve to `AnonymousUser`. See [iam_oauth README](../apps/iam_oauth/README.md).
+
 ## API Response Envelope
 
 All responses follow a consistent structure:

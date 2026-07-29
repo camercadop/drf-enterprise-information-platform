@@ -60,6 +60,26 @@ These endpoints use `AllowAny` and do not require authentication:
 
 - `POST /api/auth/login/`
 - `POST /api/auth/refresh/`
+- `POST /api/oauth/token/`
+- `POST /api/oauth/revoke/`
+
+---
+
+## OAuth2
+
+The platform includes a full OAuth2 authorization server (`apps/iam_oauth`) supporting three grant types:
+
+| Grant Type | Use Case |
+|------------|----------|
+| Authorization Code | User-delegated access from third-party clients |
+| Client Credentials | Service-to-service token issuance (no user) |
+| Refresh Token | Token renewal with rotation |
+
+All OAuth2 tokens are JWTs consistent with the platform's existing claims format (`tenant_id`, `scope`). Client Credentials tokens carry `sub=client_id` and `token_type_hint=client_credentials` instead of a user identity.
+
+Token revocation is supported via `POST /api/oauth/revoke/` (RFC 7009). Revoking a refresh token walks the entire rotation chain and revokes all descendants.
+
+See [iam_oauth README](../apps/iam_oauth/README.md) for the full endpoint reference, flow diagrams, and configuration.
 
 ---
 

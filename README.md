@@ -34,7 +34,7 @@ This platform solves these problems once — so domain teams can focus on busine
 | Database | PostgreSQL 16 |
 | Cache | Redis 7 |
 | Async Processing | Celery (broker: Redis) |
-| Auth | JWT (simplejwt) with token blacklisting |
+| Auth | JWT (simplejwt) with token blacklisting, OAuth2 authorization server |
 | Observability | OpenTelemetry, Prometheus, Grafana |
 | Containers | Docker + Docker Compose |
 | Quality | Ruff, mypy, pre-commit |
@@ -61,6 +61,7 @@ This platform solves these problems once — so domain teams can focus on busine
 
 - **Standard API envelope** — consistent `{status, data}` response format
 - **JWT authentication** — short-lived access tokens, rotating refresh tokens, tenant context in claims
+- **OAuth2 authorization server** — Authorization Code, Client Credentials, and Refresh Token grants; tenant-scoped JWTs; RFC 7009 token revocation
 - **MFA** — TOTP-based multi-factor authentication with backup codes and per-tenant enforcement
 - **IP filtering & lockout** — per-tenant IP allowlisting and brute-force lockout
 - **Idempotency** — Redis-backed idempotency middleware for mutating requests
