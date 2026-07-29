@@ -22,6 +22,11 @@ CACHES = {
     }
 }
 
+AUTH_RATE_LIMIT = {
+    "IP_RATE": "0",
+    "EMAIL_RATE": "0",
+}
+
 # OpenTelemetry: disable exporters during tests to avoid noisy output
 OTEL_EXPORTER = "none"
 

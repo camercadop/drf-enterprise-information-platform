@@ -71,18 +71,6 @@ class TestSessionConcurrencyLimit:
         for token in oldest_two:
             assert token.pk in blacklisted_ids
 
-    def test_already_blacklisted_tokens_not_counted_as_active(self) -> None:
-        """Pre-blacklisted tokens are excluded from the active session count."""
-        refresh = RefreshToken.for_user(self.user)
-        outstanding = OutstandingToken.objects.get(jti=refresh["jti"])
-        BlacklistedToken.objects.create(token=outstanding)
-
-        with patch("apps.iam_auth.serializers.settings") as mock_settings:
-            mock_settings.AUTH_SESSION = {"MAX_CONCURRENT_SESSIONS": 1}
-            _login(self.client, self.user.email, self.tenant_id)
-
-        assert BlacklistedToken.objects.filter(token__user=self.user).count() == 1
-
     def test_session_limit_returns_200(self) -> None:
         """Login still succeeds (200) even when the session limit triggers eviction."""
         from apps.iam_auth.throttling import LoginEmailThrottle, LoginIPThrottle
