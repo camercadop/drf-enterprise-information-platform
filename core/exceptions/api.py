@@ -23,6 +23,10 @@ class APIException(DRFAPIException):
         self.detail = detail
         self.code = code or self.default_code
 
+    @property
+    def response_headers(self) -> dict[str, str]:
+        return {}
+
 
 class ValidationError(APIException):
     """
@@ -88,6 +92,12 @@ class ThrottlingError(APIException):
     def __init__(self, detail: Any = None, code: str | None = None, retry_after: int | None = None):
         super().__init__(detail, code)
         self.retry_after = retry_after
+
+    @property
+    def response_headers(self) -> dict[str, str]:
+        if self.retry_after is None:
+            return {}
+        return {"Retry-After": str(self.retry_after)}
 
 
 class ConflictError(APIException):

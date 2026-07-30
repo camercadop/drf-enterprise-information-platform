@@ -22,7 +22,8 @@ flowchart
     C -->|No| E[exception_handler]
     E --> F[Extract error code]
     F --> G[Wrap in envelope]
-    G --> H["{ status: ERROR, code, data }"]
+    G --> H[Inject response_headers]
+    H --> I["{ status: ERROR, code, data }"]
 ```
 
 ---
@@ -38,6 +39,45 @@ All custom exceptions live in `core.exceptions.api` and inherit from `APIExcepti
 | `PermissionDeniedError` | 403 | `permission_denied` | Authenticated but not authorized |
 | `NotFoundError` | 404 | `not_found` | Resource does not exist or is soft-deleted |
 | `ThrottlingError` | 429 | `throttling_error` | Rate limit exceeded |
+
+---
+
+## Response Headers
+
+Exceptions can declare response headers they want injected into the HTTP response by overriding the `response_headers` property on `APIException`.
+
+The base class returns an empty dict — no headers are added by default. The handler iterates `response_headers` generically; it has no knowledge of specific exceptions or header names.
+
+```python
+@property
+def response_headers(self) -> dict[str, str]:
+    return {}
+```
+
+To add headers, override the property on your exception class:
+
+```python
+class ThrottlingError(APIException):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    default_code = "throttling_error"
+
+    def __init__(self, detail=None, code=None, retry_after: int | None = None):
+        super().__init__(detail, code)
+        self.retry_after = retry_after
+
+    @property
+    def response_headers(self) -> dict[str, str]:
+        if self.retry_after is None:
+            return {}
+        return {"Retry-After": str(self.retry_after)}
+```
+
+The handler applies all declared headers without any exception-specific logic:
+
+```python
+for header, value in getattr(exc, "response_headers", {}).items():
+    response[header] = value
+```
 
 ---
 
