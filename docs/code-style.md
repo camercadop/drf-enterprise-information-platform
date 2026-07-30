@@ -62,6 +62,8 @@ How the code should look — formatting, structure, naming, and structural conve
 - Use `querysets: dict[str, QuerySet]` for per-action queryset mapping instead of overriding `get_queryset` when the only difference is the queryset
 - Use `write_permission_classes` for elevated write permissions instead of overriding `get_permissions`
 - Use `tenant_scoping = False` on viewsets that must not be tenant-filtered (e.g., `TenantViewSet` itself)
+- Default behavior is active unless explicitly disabled per-viewset via a class attribute — the safe path is always the default
+- Per-viewset customization is declared via class attributes, not by overriding methods
 - Use `parent_lookup_fields: dict[str, str]` on nested resource viewsets — maps URL kwargs to model field names; the base viewset auto-filters the queryset and injects parent FK values into `clean_create_data`
 - Lifecycle hooks: `pre_create(serializer)`/`post_create(instance)`, `pre_update(serializer)`/`post_update(instance)`, `pre_destroy(instance)`/`post_destroy(instance)`
 - Data preparation: `clean_create_data`/`clean_update_data` for raw request data manipulation before serializer instantiation
@@ -126,6 +128,7 @@ How the code should look — formatting, structure, naming, and structural conve
 
 - All new app-level settings blocks use the `APP_` prefix (e.g., `APP_SYS_EVENTBUS`, `APP_DMS_INGESTION`)
 - Existing settings blocks (`AUTH_LOCKOUT`, `AUTH_RATE_LIMIT`, `AUTH_SESSION`) are not renamed
+- All configuration for a feature lives in a single top-level settings dict — no scattered individual keys
 
 ## Validators
 

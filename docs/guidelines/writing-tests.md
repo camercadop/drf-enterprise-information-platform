@@ -458,6 +458,35 @@ assert "permissions" in response.data["data"]
 
 ---
 
+## Subtests
+
+Use `pytest-subtests` when a single test method needs to assert over multiple inputs or cases without stopping at the first failure. This keeps related assertions in one test while still reporting each failure independently.
+
+```python
+from typing import Any
+
+
+class TestParseRate:
+    def test_valid_rates(self, subtests: Any) -> None:
+        cases = [
+            ("10/minute", (10, 60)),
+            ("5/second", (5, 1)),
+            ("100/hour", (100, 3600)),
+        ]
+        for rate, expected in cases:
+            with subtests.test(rate=rate):
+                assert _parse_rate(rate) == expected
+```
+
+Rules:
+
+- Use `subtests` for data-driven cases within a single logical scenario — not as a replacement for separate test methods when cases test distinct behaviors
+- Always pass a descriptive label to `subtests.test()` (e.g., `subtests.test(rate=rate)`) so failures are identifiable in output
+- The `subtests` fixture is provided by `pytest-subtests` and injected automatically — no import needed beyond the type hint
+- The base classes (`BaseCRUDAPITest` and variants) already use `subtests` internally for `valid_payloads` and `invalid_payloads` iteration — follow the same pattern in custom tests
+
+---
+
 ## Common Pitfalls
 
 | Mistake | Consequence | Fix |

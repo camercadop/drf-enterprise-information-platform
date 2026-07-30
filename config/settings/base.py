@@ -57,6 +57,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.tenants.middleware.TenantContextMiddleware",
     "apps.tenants.middleware.TenantTelemetryMiddleware",
+    "core.middleware.rate_limit.RateLimitMiddleware",
     "core.middleware.idempotency.IdempotencyMiddleware",
 ]
 
@@ -245,6 +246,13 @@ APP_SAFETY_IDEMPOTENCY = {
     "TTL": env.int("IDEMPOTENCY_TTL", default=86400),
     "REQUIRE_HEADER": env.bool("IDEMPOTENCY_REQUIRE_HEADER", default=False),
     "GUARDED_METHODS": ["POST", "PUT", "PATCH", "DELETE"],
+}
+
+APP_RATE_LIMIT = {
+    "ENABLED": env.bool("RATE_LIMIT_ENABLED", default=False),
+    "DEFAULT_RATE": env("RATE_LIMIT_DEFAULT", default="10/minute"),
+    "SKIP_PATHS": [],
+    "USE_BOUNDARY_SCOPE": env.bool("RATE_LIMIT_USE_BOUNDARY_SCOPE", default=False),
 }
 
 APP_SYS_EVENTBUS = {

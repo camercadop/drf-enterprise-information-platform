@@ -93,6 +93,7 @@ tests/
 - Endpoint (integration) test files use the `test_api_*` prefix (e.g., `test_api_login.py`)
 - Factories split per app under `tests/factories/<app>.py`
 - Shared fixtures split per domain under `tests/fixtures/<domain>.py`
+- Use `pytest-subtests` (`subtests` fixture) when a single test method asserts over multiple inputs — pass a descriptive label to `subtests.test()` so each failure is identifiable; see [Writing Tests — Subtests](guidelines/writing-tests.md#subtests)
 
 ## Factories
 
