@@ -28,6 +28,23 @@ Owner: `core/middleware/idempotency.py`
 
 ---
 
+### Rate Limiting
+
+| Key Pattern | TTL | Value |
+|-------------|-----|-------|
+| `rate_limit:{ident}:{path}` | Configurable (`APP_RATE_LIMIT["DEFAULT_RATE"]` window) | Integer — request count in current window |
+| `rate_limit:{scope}:{ident}:{path}` | Configurable (`APP_RATE_LIMIT["DEFAULT_RATE"]` window) | Integer — request count in current window (boundary-scoped) |
+
+Owner: `core/middleware/rate_limit.py` (`FixedWindowRateLimitMiddleware`)
+
+**Design notes:**
+- `ident` is `user:{pk}` for authenticated requests or `ip:{client_ip}` for unauthenticated requests.
+- `scope` is a sorted `key=value|...` string derived from `get_bound_scope()`, present only when `USE_BOUNDARY_SCOPE=True`.
+- Fixed-window algorithm: key is created with `cache.add` on the first request; subsequent requests use `cache.incr`. TTL equals the window duration.
+- New algorithm implementations subclass `BaseRateLimitMiddleware` and override `is_rate_limited`.
+
+---
+
 ### Auth Lockout
 
 | Key Pattern | TTL | Value |

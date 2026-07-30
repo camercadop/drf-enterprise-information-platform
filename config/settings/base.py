@@ -57,7 +57,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.tenants.middleware.TenantContextMiddleware",
     "apps.tenants.middleware.TenantTelemetryMiddleware",
-    "core.middleware.rate_limit.RateLimitMiddleware",
+    "core.middleware.rate_limit.FixedWindowRateLimitMiddleware",
     "core.middleware.idempotency.IdempotencyMiddleware",
 ]
 

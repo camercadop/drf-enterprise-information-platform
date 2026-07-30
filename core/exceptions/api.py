@@ -85,8 +85,9 @@ class ThrottlingError(APIException):
     default_detail = "Too many requests. Please try again later."
     default_code = "throttling_error"
 
-    def __init__(self, detail: Any = None, code: str | None = None):
+    def __init__(self, detail: Any = None, code: str | None = None, retry_after: int | None = None):
         super().__init__(detail, code)
+        self.retry_after = retry_after
 
 
 class ConflictError(APIException):

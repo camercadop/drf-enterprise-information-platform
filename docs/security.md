@@ -550,7 +550,7 @@ Implementation: `core/middleware/idempotency.py`.
 
 ## Rate Limiting
 
-Platform-wide rate limiting is enforced by `RateLimitMiddleware` (`core/middleware/rate_limit.py`) using a fixed-window algorithm backed by Redis. It applies to all authenticated and unauthenticated requests globally, with per-view opt-out support.
+Platform-wide rate limiting is enforced by `FixedWindowRateLimitMiddleware` (`core/middleware/rate_limit.py`), a concrete implementation of `BaseRateLimitMiddleware` using a fixed-window algorithm backed by Redis. It applies to all authenticated and unauthenticated requests globally, with per-view opt-out support.
 
 ### Configuration
 
@@ -587,7 +587,12 @@ Where `ident` is `user:{pk}` for authenticated requests or `ip:{client_ip}` for 
 
 ### Error Response
 
-When a request exceeds the rate limit, the middleware raises `ThrottlingError`, which is handled by the custom exception handler and returns a 429 response:
+When a request exceeds the rate limit, the middleware raises `ThrottlingError`, which is handled by the custom exception handler and returns a 429 response with a `Retry-After` header indicating how many seconds the client should wait before retrying:
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 42
+```
 
 ```json
 {
@@ -599,9 +604,8 @@ When a request exceeds the rate limit, the middleware raises `ThrottlingError`, 
 }
 ```
 
-### Middleware Position
+The `Retry-After` value is the remaining TTL of the rate limit key in Redis. If the TTL is unavailable, it falls back to the full window duration.
 
-`RateLimitMiddleware` is positioned after `TenantTelemetryMiddleware` and before `IdempotencyMiddleware` in the middleware stack.
 
 ---
 

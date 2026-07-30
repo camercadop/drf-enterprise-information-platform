@@ -10,6 +10,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
+from core.exceptions.api import ThrottlingError as AppThrottlingError
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,6 +50,9 @@ def exception_handler(exc: Exception, context: dict[str, Any]) -> Response | Non
         "code": code,
         "data": response.data,
     }
+
+    if isinstance(exc, AppThrottlingError) and exc.retry_after is not None:
+        response["Retry-After"] = str(exc.retry_after)
 
     return response
 

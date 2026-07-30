@@ -4,7 +4,23 @@ Platform-level middleware that applies cross-cutting concerns across all request
 
 ## Rate Limit Middleware
 
-`RateLimitMiddleware` enforces request rate limits using a fixed-window algorithm backed by Redis.
+`BaseRateLimitMiddleware` is an abstract base class that handles all common middleware plumbing: enabled check, view opt-out, skip paths, key building, and throttle raising. Concrete subclasses implement the `is_rate_limited(key, count, window)` method with a specific algorithm.
+
+`FixedWindowRateLimitMiddleware` is the built-in implementation using a fixed-window algorithm backed by Redis.
+
+### Extending
+
+To add a new algorithm, subclass `BaseRateLimitMiddleware` and override `is_rate_limited`:
+
+```python
+from core.middleware.rate_limit import BaseRateLimitMiddleware
+
+class SlidingWindowRateLimitMiddleware(BaseRateLimitMiddleware):
+    def is_rate_limited(self, key: str, count: int, window: int) -> bool:
+        ...
+```
+
+Then register it in `MIDDLEWARE` instead of `FixedWindowRateLimitMiddleware`.
 
 ### Configuration
 
@@ -41,4 +57,4 @@ Where `ident` is `user:{pk}` for authenticated requests or `ip:{client_ip}` for 
 
 ### Error Handling
 
-When a request exceeds the rate limit, the middleware raises `ThrottlingError`, which is handled by the custom exception handler and returns a 429 response with the standard error envelope.
+When a request exceeds the rate limit, the middleware raises `ThrottlingError`, which is handled by the custom exception handler and returns a 429 response with a `Retry-After` header indicating how many seconds the client should wait before retrying. The value is the remaining TTL of the rate limit key in Redis, falling back to the full window duration if unavailable.
