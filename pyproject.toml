@@ -35,6 +35,7 @@ dev = [
     "pre-commit>=4.6.0",
     "pytest>=9.1.1",
     "pytest-django>=4.12.0",
+    "pytest-env>=1.7.0",
     "pytest-subtests>=0.15.0",
     "ruff>=0.15.20",
 ]
@@ -58,6 +59,9 @@ DJANGO_SETTINGS_MODULE = "config.settings.test"
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
+]
+env=[
+    "DJANGO_SETTINGS_MODULE=config.settings.test",
 ]
 
 [tool.ruff]
