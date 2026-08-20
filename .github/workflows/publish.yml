@@ -1,14 +1,17 @@
 name: Publish
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
     branches: [main]
+    types: [completed]
 
 env:
   IMAGE: ghcr.io/camercadop/drf-enterprise-information-platform
 
 jobs:
   build-and-push:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

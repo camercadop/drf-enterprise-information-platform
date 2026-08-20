@@ -25,6 +25,7 @@ dependencies = [
     "celery[sqlalchemy]>=5.6.3",
     "django-storages>=1.14.6",
     "cryptography>=50.0.0",
+    "sqlparse>=0.6.0",
 ]
 
 [dependency-groups]
